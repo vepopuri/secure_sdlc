@@ -6,7 +6,8 @@ the platform: a React + TypeScript + Material UI app with a full, typed mock dat
 designed so a real backend can be dropped in later without a UI redesign.
 
 This is a **demo build**. All data — agents, MCP connectors, workflows, approvals, security findings, audit
-events — is realistic mock data, clearly labeled throughout the UI with a "Demo data" chip.
+events — is realistic mock data, clearly labeled throughout the UI with a "Demo data" chip. The one exception is the
+Remediation Agent's live GitHub integration — see [Live integration: Remediation Agent](#live-integration-remediation-agent) below.
 
 ## Platform model
 
@@ -124,12 +125,33 @@ Every controlled or write-capable agent action carries an `ActionLevel` (0–3):
 environments they can act in. The header's profile menu includes a role switcher so you can see the same data
 under different role lenses without a real login system.
 
+## Live integration: Remediation Agent
+
+Everywhere else in this app, "Run agent" is simulated. The **Remediation Agent** is the one deliberate exception: its
+details drawer has a separate, clearly-labeled **"Open real remediation PR (live)"** button that calls a real
+Vercel serverless function (`api/remediate.ts`), which calls the real GitHub REST API to open — or reuse, if one is
+already open — an actual draft pull request on `vepopuri/secure_sdlc`. This proves the write-integration pattern the
+rest of the platform describes (agent → governed action → real system) end to end for one concrete case, without
+faking a vulnerability fix that doesn't exist in this codebase: the PR adds a template remediation note under
+`remediation/<finding-id>.md`, not a generated code patch.
+
+**Setup** (see `.env.example`): create a fine-grained GitHub Personal Access Token scoped to just this repository
+with `Contents: Read and write` and `Pull requests: Read and write` permissions, then add it as `GITHUB_TOKEN` in
+Vercel Project Settings → Environment Variables. Without it, the button returns a clear "not configured yet" error
+instead of failing silently. Optionally set `DEMO_TRIGGER_SECRET` (server) and the matching
+`VITE_DEMO_TRIGGER_SECRET` (client, must be set at build time) once this app's URL is shared publicly — otherwise
+anyone who finds the link could trigger a real GitHub write. The server never accepts a finding, repo, or file
+content from the client; it only accepts a `findingId` checked against a small whitelist in `api/_lib/findings.ts`,
+and reuses the same deterministic branch/PR per finding so repeated clicks don't spam new PRs.
+
 ## What is intentionally deferred
 
-This build is the application shell and demo experience, not the production backend. Not implemented, on purpose:
+This build is the application shell and demo experience, not the production backend. Not implemented, on purpose,
+outside the one live integration described above:
 
-- Real MCP connector calls, OAuth/connection flows, and live source-system data — everything is simulated with
-  artificial latency and an occasional simulated failure, clearly labeled "demo mode."
+- Real MCP connector calls, OAuth/connection flows, and live source-system data for every agent other than the
+  Remediation Agent's GitHub write path — everything else is simulated with artificial latency and an occasional
+  simulated failure, clearly labeled "demo mode."
 - A real Agent Orchestrator / Agent Runtime that actually executes agent logic — "Run agent" appends a synthetic
   execution record rather than invoking a model.
 - A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays.

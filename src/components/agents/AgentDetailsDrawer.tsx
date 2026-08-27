@@ -13,6 +13,12 @@ import ListItemText from '@mui/material/ListItemText';
 import CloseIcon from '@mui/icons-material/Close';
 import Switch from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Link from '@mui/material/Link';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { useState } from 'react';
 import type { Agent } from '../../types/domain';
 import { RiskBadge, StatusBadge, ActionLevelBadge } from '../common/StatusBadge';
@@ -20,6 +26,7 @@ import { agents as allAgents } from '../../data/agents';
 import { sdlcPhases } from '../../data/phases';
 import { mcpConnectors } from '../../data/mcpConnectors';
 import { agentService } from '../../services';
+import { createLiveRemediationPR, type LiveRemediationResult } from '../../services/liveRemediationService';
 
 interface AgentDetailsDrawerProps {
   agent: Agent | null;
@@ -43,6 +50,9 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgents }: AgentDetailsDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [runResult, setRunResult] = useState<string | null>(null);
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [liveResult, setLiveResult] = useState<LiveRemediationResult | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!agent) return null;
 
@@ -67,6 +77,15 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
       onChanged?.(updated);
       setRunResult(updated.lastExecution?.summary ?? 'Run complete.');
     }
+  }
+
+  async function handleLiveRemediate() {
+    setConfirmOpen(false);
+    setLiveBusy(true);
+    setLiveResult(null);
+    const result = await createLiveRemediationPR();
+    setLiveBusy(false);
+    setLiveResult(result);
   }
 
   return (
@@ -222,7 +241,60 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
             {busy ? 'Running…' : 'Run agent (demo mode)'}
           </Button>
         )}
+
+        {agent.id === 'remediation_agent' && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Alert severity="warning" icon={<GitHubIcon fontSize="inherit" />} sx={{ mb: 1.5 }}>
+              <strong>Live integration.</strong> This is the one agent in this build wired to a real
+              system — every other action in this app is simulated. The button below opens (or reuses)
+              an actual draft pull request on <strong>vepopuri/secure_sdlc</strong> via the GitHub API.
+            </Alert>
+            {liveResult?.ok && (
+              <Alert severity="success" sx={{ mb: 1.5 }} onClose={() => setLiveResult(null)}>
+                {liveResult.reused ? 'Reused the existing pull request: ' : 'Opened a new pull request: '}
+                <Link href={liveResult.prUrl} target="_blank" rel="noopener noreferrer">
+                  {liveResult.prUrl}
+                </Link>
+              </Alert>
+            )}
+            {liveResult && !liveResult.ok && (
+              <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setLiveResult(null)}>
+                {liveResult.error}
+              </Alert>
+            )}
+            {canRunAgents && (
+              <Button
+                variant="outlined"
+                color="warning"
+                fullWidth
+                startIcon={<GitHubIcon />}
+                disabled={liveBusy}
+                onClick={() => setConfirmOpen(true)}
+              >
+                {liveBusy ? 'Opening real pull request…' : 'Open real remediation PR (live)'}
+              </Button>
+            )}
+          </>
+        )}
       </Box>
+
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Open a real pull request?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            This creates (or reuses) a real branch and opens a real draft pull request on{' '}
+            <strong>vepopuri/secure_sdlc</strong> through GitHub's API. This is not a simulation — it is
+            a genuine write action, visible to anyone with access to that repository.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="warning" onClick={handleLiveRemediate}>
+            Yes, open the real PR
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Drawer>
   );
 }
