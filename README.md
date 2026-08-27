@@ -131,18 +131,28 @@ Everywhere else in this app, "Run agent" is simulated. The **Remediation Agent**
 details drawer has a separate, clearly-labeled **"Open real remediation PR (live)"** button that calls a real
 Vercel serverless function (`api/remediate.ts`), which calls the real GitHub REST API to open — or reuse, if one is
 already open — an actual draft pull request on `vepopuri/secure_sdlc`. This proves the write-integration pattern the
-rest of the platform describes (agent → governed action → real system) end to end for one concrete case, without
-faking a vulnerability fix that doesn't exist in this codebase: the PR adds a template remediation note under
-`remediation/<finding-id>.md`, not a generated code patch.
+rest of the platform describes (agent → governed action → real system) end to end for one concrete case.
+
+The PR's content has two tiers, controlled by whether `ANTHROPIC_API_KEY` is set:
+
+- **Without it (default):** a static template remediation note under `remediation/<finding-id>.md` — proves the
+  branch/file/PR plumbing without claiming to be a real fix.
+- **With it:** `api/_lib/anthropic.ts` calls **Claude Opus 5** with a DevSecOps remediation system prompt (root
+  cause → patch → verification strategy) against the finding's CVE details and a small representative code snippet
+  (`api/_lib/findings.ts` — this repo has no real vulnerable backend code, so the snippet is a clearly-labeled
+  sample, not code pulled live from the repository). The model's actual output becomes the PR content. Either way,
+  the PR is explicitly marked as unreviewed and routed through the platform's Level 2 approval policy before merge.
 
 **Setup** (see `.env.example`): create a fine-grained GitHub Personal Access Token scoped to just this repository
 with `Contents: Read and write` and `Pull requests: Read and write` permissions, then add it as `GITHUB_TOKEN` in
 Vercel Project Settings → Environment Variables. Without it, the button returns a clear "not configured yet" error
-instead of failing silently. Optionally set `DEMO_TRIGGER_SECRET` (server) and the matching
-`VITE_DEMO_TRIGGER_SECRET` (client, must be set at build time) once this app's URL is shared publicly — otherwise
-anyone who finds the link could trigger a real GitHub write. The server never accepts a finding, repo, or file
-content from the client; it only accepts a `findingId` checked against a small whitelist in `api/_lib/findings.ts`,
-and reuses the same deterministic branch/PR per finding so repeated clicks don't spam new PRs.
+instead of failing silently. Add `ANTHROPIC_API_KEY` to enable the real patch-generation tier above. Optionally set
+`DEMO_TRIGGER_SECRET` (server) and the matching `VITE_DEMO_TRIGGER_SECRET` (client, must be set at build time) once
+this app's URL is shared publicly — otherwise anyone who finds the link could trigger a real GitHub write (and, with
+`ANTHROPIC_API_KEY` set, a real model call). The server never accepts a finding, repo, file content, or code snippet
+from the client; it only accepts a `findingId` checked against a small whitelist in `api/_lib/findings.ts`, and
+reuses the same deterministic branch/PR per finding so repeated clicks don't spam new PRs (though each click with
+`ANTHROPIC_API_KEY` set still re-runs the model — there's no response caching).
 
 ## What is intentionally deferred
 
@@ -153,7 +163,8 @@ outside the one live integration described above:
   Remediation Agent's GitHub write path — everything else is simulated with artificial latency and an occasional
   simulated failure, clearly labeled "demo mode."
 - A real Agent Orchestrator / Agent Runtime that actually executes agent logic — "Run agent" appends a synthetic
-  execution record rather than invoking a model.
+  execution record rather than invoking a model, for every agent except the Remediation Agent's live action (and
+  even there, only when `ANTHROPIC_API_KEY` is set — see above).
 - A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays.
 - Authentication/SSO — the role switcher is a demo convenience, not a login system.
 - Persisting any change across a page reload — state lives in memory for the session only.
