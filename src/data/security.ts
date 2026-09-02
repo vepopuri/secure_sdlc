@@ -1,5 +1,5 @@
 import type { SecurityFinding } from '../types/domain';
-import { daysAgo } from './mockHelpers';
+import { daysAgo, seededInt } from './mockHelpers';
 
 export const securityFindings: SecurityFinding[] = [
   {
@@ -148,7 +148,31 @@ export const complianceEvidenceStatus = {
 };
 
 export const openExceptionsCount = 4;
-export const approvalTrend7dPct = 12; // percentage change in approval volume, demo only
+
+/** Daily approval decision volume for the last 7 days, oldest first. */
+export const approvalVolumeTrend7d: { date: string; approved: number; rejected: number; pending: number }[] = Array.from(
+  { length: 7 },
+  (_, i) => {
+    const daysBack = 6 - i;
+    const key = `approval-trend-${daysBack}`;
+    return {
+      date: daysAgo(daysBack),
+      approved: seededInt(`${key}-approved`, 4, 14),
+      rejected: seededInt(`${key}-rejected`, 0, 3),
+      pending: seededInt(`${key}-pending`, 0, 5),
+    };
+  },
+);
+
+function totalVolume(day: (typeof approvalVolumeTrend7d)[number]): number {
+  return day.approved + day.rejected + day.pending;
+}
+
+// Percentage change in total approval volume between the first and last day of the 7-day window.
+const firstDayVolume = totalVolume(approvalVolumeTrend7d[0]);
+const lastDayVolume = totalVolume(approvalVolumeTrend7d[approvalVolumeTrend7d.length - 1]);
+export const approvalTrend7dPct = firstDayVolume === 0 ? 0 : Math.round(((lastDayVolume - firstDayVolume) / firstDayVolume) * 100);
+
 export const remediationAgingBuckets = [
   { label: '0-7 days', count: 5 },
   { label: '8-30 days', count: 4 },

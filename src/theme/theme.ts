@@ -77,5 +77,14 @@ export const theme = createTheme({
         tooltip: { fontSize: '0.75rem' },
       },
     },
+    // Detail drawers (agent/connector/KG entity) render at zIndex 1400 so they sit above
+    // the header — higher than MUI's default Popover/Menu zIndex (1300). Without this, a
+    // Select's dropdown menu opened inside one of those drawers renders behind it and its
+    // options become unclickable.
+    MuiPopover: {
+      styleOverrides: {
+        root: { zIndex: 1500 },
+      },
+    },
   },
 });

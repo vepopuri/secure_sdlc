@@ -1,5 +1,10 @@
-import type { Environment } from '../types/domain';
+import type { Environment, Role, RoleId } from '../types/domain';
+import { roles as seedRoles } from '../data/roles';
 import { withLatency } from './simulate';
+import { initStore, savePersisted } from './persist';
+
+const STORE_KEY = 'settings';
+const ROLES_STORE_KEY = 'roles';
 
 export interface ApprovalPolicySetting {
   actionLevel: 0 | 1 | 2 | 3;
@@ -24,7 +29,7 @@ export interface PlatformSettings {
   tenantIsolation: { enforced: boolean; lastVerified: string };
 }
 
-let settings: PlatformSettings = {
+const seedSettings: PlatformSettings = {
   workspaceName: 'Northwind Platform Engineering',
   organizationName: 'Northwind Retail Group',
   dataRetentionDays: 90,
@@ -45,12 +50,27 @@ let settings: PlatformSettings = {
   tenantIsolation: { enforced: true, lastVerified: '2026-08-26T09:00:00Z' },
 };
 
+let settings: PlatformSettings = initStore(STORE_KEY, seedSettings);
+
+// Roles editing is scoped to the permission fields of the 7 seeded roles — RoleId
+// is a closed union, so this never creates or deletes a role, only edits one in place.
+let rolesStore: Role[] = initStore(ROLES_STORE_KEY, seedRoles.map((r) => ({ ...r, visibleTabs: [...r.visibleTabs], canApprove: [...r.canApprove], environmentAccess: [...r.environmentAccess] })));
+
 export const settingsService = {
   get(): Promise<PlatformSettings> {
     return withLatency(settings, 150);
   },
   update(patch: Partial<PlatformSettings>): Promise<PlatformSettings> {
     settings = { ...settings, ...patch };
+    savePersisted(STORE_KEY, settings);
     return withLatency(settings, 300);
+  },
+  listRoles(): Promise<Role[]> {
+    return withLatency(rolesStore, 150);
+  },
+  updateRole(id: RoleId, patch: Partial<Omit<Role, 'id'>>): Promise<Role | undefined> {
+    rolesStore = rolesStore.map((r) => (r.id === id ? { ...r, ...patch } : r));
+    savePersisted(ROLES_STORE_KEY, rolesStore);
+    return withLatency(rolesStore.find((r) => r.id === id), 250);
   },
 };

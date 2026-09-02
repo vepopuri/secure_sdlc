@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
@@ -10,13 +10,14 @@ import TableRow from '@mui/material/TableRow';
 import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
+import LinearProgress from '@mui/material/LinearProgress';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
-import { workflows } from '../data/workflows';
+import { workflowService } from '../services';
 import { agents } from '../data/agents';
-import type { WorkflowStatus } from '../types/domain';
+import type { Workflow, WorkflowStatus } from '../types/domain';
 
 const FILTERS: { id: WorkflowStatus | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -40,14 +41,30 @@ function formatDuration(seconds: number): string {
 export function WorkflowsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<WorkflowStatus | 'all'>('all');
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rows = useMemo(() => (filter === 'all' ? workflows : workflows.filter((w) => w.status === filter)), [filter]);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    workflowService.list().then((result) => {
+      if (!cancelled) {
+        setWorkflows(result);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rows = useMemo(() => (filter === 'all' ? workflows : workflows.filter((w) => w.status === filter)), [filter, workflows]);
 
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const w of workflows) map[w.status] = (map[w.status] ?? 0) + 1;
     return map;
-  }, []);
+  }, [workflows]);
 
   return (
     <Box>
@@ -64,6 +81,8 @@ export function WorkflowsPage() {
           />
         ))}
       </Stack>
+
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
 
       <Paper>
         {rows.length === 0 ? (

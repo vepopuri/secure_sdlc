@@ -1,12 +1,15 @@
-import type { Agent, AgentCategory, EnabledStatus, RiskLevel, SdlcPhaseId } from '../types/domain';
+import type { Agent, AgentCategory, EnabledStatus, Environment, RiskLevel, SdlcPhaseId } from '../types/domain';
 import { agents as seedAgents } from '../data/agents';
 import { daysAgo } from '../data/mockHelpers';
 import { withLatency } from './simulate';
+import { auditService } from './auditService';
+import { initStore, savePersisted } from './persist';
 
 // In-memory copy so the demo can toggle agent enablement without a backend.
 // Replace this module with real HTTP calls against your Agent API; keep the
 // exported function signatures the same and callers do not need to change.
-let store: Agent[] = seedAgents.map((a) => ({ ...a }));
+const STORE_KEY = 'agents';
+let store: Agent[] = initStore(STORE_KEY, seedAgents.map((a) => ({ ...a })));
 
 export interface AgentFilters {
   search?: string;
@@ -48,11 +51,12 @@ export const agentService = {
 
   setEnabled(id: string, enabled: boolean): Promise<Agent | undefined> {
     store = store.map((a) => (a.id === id ? { ...a, status: enabled ? 'enabled' : 'disabled' } : a));
+    savePersisted(STORE_KEY, store);
     return withLatency(store.find((a) => a.id === id));
   },
 
   /** Simulates a demo-mode run. Appends a synthetic execution record; does not call a real agent. */
-  run(id: string): Promise<Agent | undefined> {
+  run(id: string, context: { projectId: string; environment: Environment }): Promise<Agent | undefined> {
     store = store.map((a) => {
       if (a.id !== id) return a;
       const record = {
@@ -65,6 +69,21 @@ export const agentService = {
       };
       return { ...a, lastExecution: record, executionHistory: [record, ...a.executionHistory] };
     });
-    return withLatency(store.find((a) => a.id === id), 900);
+    savePersisted(STORE_KEY, store);
+    const agent = store.find((a) => a.id === id);
+    if (agent) {
+      auditService.append({
+        action: `Ran ${agent.name} (demo mode)`,
+        user: agent.name,
+        agentId: agent.id,
+        projectId: context.projectId,
+        environment: context.environment,
+        riskLevel: agent.riskLevel,
+        policyDecision: 'allowed',
+        result: 'success',
+        correlationId: `corr-run-${agent.lastExecution?.id ?? id}`,
+      });
+    }
+    return withLatency(agent, 900);
   },
 };

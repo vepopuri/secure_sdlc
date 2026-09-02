@@ -165,6 +165,15 @@ outside the one live integration described above:
 - A real Agent Orchestrator / Agent Runtime that actually executes agent logic — "Run agent" appends a synthetic
   execution record rather than invoking a model, for every agent except the Remediation Agent's live action (and
   even there, only when `ANTHROPIC_API_KEY` is set — see above).
-- A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays.
+- A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays
+  (though see below — they do persist to `localStorage` within a browser).
 - Authentication/SSO — the role switcher is a demo convenience, not a login system.
-- Persisting any change across a page reload — state lives in memory for the session only.
+
+## Persistence
+
+Every mock service's mutable store, plus the role/environment/project selectors, is mirrored to `localStorage`
+(`src/services/persist.ts`) on every mutation, so approvals decided, agents run, workflows started, Knowledge
+Graph edits, and settings changes all survive a page reload. On first load — or with `localStorage` cleared or
+unavailable — every store falls back to its deterministic seed data unchanged, so the demo still looks the same
+on a clean browser. This is per-browser, in-memory-replacement persistence for demo continuity, not a real
+database: clearing site data resets everything to the original seed.

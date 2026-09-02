@@ -20,7 +20,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Link from '@mui/material/Link';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { useState } from 'react';
-import type { Agent } from '../../types/domain';
+import type { Agent, Environment } from '../../types/domain';
 import { RiskBadge, StatusBadge, ActionLevelBadge } from '../common/StatusBadge';
 import { agents as allAgents } from '../../data/agents';
 import { sdlcPhases } from '../../data/phases';
@@ -34,6 +34,7 @@ interface AgentDetailsDrawerProps {
   onClose: () => void;
   onChanged?: (agent: Agent) => void;
   canRunAgents: boolean;
+  context: { projectId: string; environment: Environment };
 }
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -47,7 +48,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
   );
 }
 
-export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgents }: AgentDetailsDrawerProps) {
+export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgents, context }: AgentDetailsDrawerProps) {
   const [busy, setBusy] = useState(false);
   const [runResult, setRunResult] = useState<string | null>(null);
   const [liveBusy, setLiveBusy] = useState(false);
@@ -71,7 +72,7 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
   async function handleRun() {
     setBusy(true);
     setRunResult(null);
-    const updated = await agentService.run(agent!.id);
+    const updated = await agentService.run(agent!.id, context);
     setBusy(false);
     if (updated) {
       onChanged?.(updated);

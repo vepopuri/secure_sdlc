@@ -18,17 +18,50 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import Alert from '@mui/material/Alert';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import EditIcon from '@mui/icons-material/Edit';
+import AddIcon from '@mui/icons-material/Add';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge, ActionLevelBadge } from '../components/common/StatusBadge';
-import { settingsService, type PlatformSettings, agentService } from '../services';
-import { teams, projects } from '../data/orgs';
-import { roles } from '../data/roles';
-import { agents as seedAgents } from '../data/agents';
+import { settingsService, orgService, type PlatformSettings, agentService } from '../services';
 import { mcpConnectors as seedConnectors } from '../data/mcpConnectors';
 import { useAppState } from '../context/AppStateContext';
-import type { Agent, Environment, McpConnector } from '../types/domain';
+import type { Agent, ActionLevel, Environment, McpConnector, Project, Role, Team } from '../types/domain';
+
+const ALL_ENVIRONMENTS: Environment[] = ['demo', 'development', 'staging', 'production'];
+const ALL_ACTION_LEVELS: ActionLevel[] = [0, 1, 2, 3];
+const AUDIT_VISIBILITIES: Role['auditVisibility'][] = ['own', 'team', 'full'];
+
+interface TeamFormState {
+  name: string;
+  memberCount: number;
+  projectIds: string[];
+}
+
+interface ProjectFormState {
+  name: string;
+  repository: string;
+  teamId: string;
+  environment: Environment[];
+}
+
+interface RoleFormState {
+  canApprove: ActionLevel[];
+  canConfigureIntegrations: boolean;
+  canRunAgents: boolean;
+  environmentAccess: Environment[];
+  auditVisibility: Role['auditVisibility'];
+}
 
 function Section({ id, title, children, defaultExpanded }: { id: string; title: string; children: React.ReactNode; defaultExpanded?: boolean }) {
   return (
@@ -42,14 +75,25 @@ function Section({ id, title, children, defaultExpanded }: { id: string; title: 
 }
 
 export function SettingsPage() {
-  const { role } = useAppState();
+  const { role, refreshRoles } = useAppState();
   const readOnly = !role.canConfigureIntegrations;
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
-  const [agentList, setAgentList] = useState<Agent[]>(seedAgents);
+  const [agentList, setAgentList] = useState<Agent[]>([]);
   const [connectorList] = useState<McpConnector[]>(seedConnectors);
+  const [teamList, setTeamList] = useState<Team[]>([]);
+  const [projectList, setProjectList] = useState<Project[]>([]);
+  const [roleList, setRoleList] = useState<Role[]>([]);
+
+  const [teamDialog, setTeamDialog] = useState<{ id?: string; form: TeamFormState } | null>(null);
+  const [projectDialog, setProjectDialog] = useState<{ id?: string; form: ProjectFormState } | null>(null);
+  const [roleDialog, setRoleDialog] = useState<{ id: Role['id']; name: string; form: RoleFormState } | null>(null);
 
   useEffect(() => {
     settingsService.get().then(setSettings);
+    orgService.listTeams().then(setTeamList);
+    orgService.listProjects().then(setProjectList);
+    settingsService.listRoles().then(setRoleList);
+    agentService.list().then(setAgentList);
   }, []);
 
   function patch(update: Partial<PlatformSettings>) {
@@ -60,6 +104,63 @@ export function SettingsPage() {
   async function toggleAgent(id: string, enabled: boolean) {
     const updated = await agentService.setEnabled(id, enabled);
     if (updated) setAgentList((prev) => prev.map((a) => (a.id === id ? updated : a)));
+  }
+
+  function openNewTeam() {
+    setTeamDialog({ form: { name: '', memberCount: 1, projectIds: [] } });
+  }
+  function openEditTeam(t: Team) {
+    setTeamDialog({ id: t.id, form: { name: t.name, memberCount: t.memberCount, projectIds: [...t.projectIds] } });
+  }
+  async function saveTeam() {
+    if (!teamDialog) return;
+    if (teamDialog.id) {
+      const updated = await orgService.updateTeam(teamDialog.id, teamDialog.form);
+      if (updated) setTeamList((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    } else {
+      const created = await orgService.createTeam(teamDialog.form);
+      setTeamList((prev) => [...prev, created]);
+    }
+    setTeamDialog(null);
+  }
+
+  function openNewProject() {
+    setProjectDialog({ form: { name: '', repository: '', teamId: teamList[0]?.id ?? '', environment: [] } });
+  }
+  function openEditProject(p: Project) {
+    setProjectDialog({ id: p.id, form: { name: p.name, repository: p.repository, teamId: p.teamId, environment: [...p.environment] } });
+  }
+  async function saveProject() {
+    if (!projectDialog) return;
+    if (projectDialog.id) {
+      const updated = await orgService.updateProject(projectDialog.id, projectDialog.form);
+      if (updated) setProjectList((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    } else {
+      const created = await orgService.createProject(projectDialog.form);
+      setProjectList((prev) => [...prev, created]);
+    }
+    setProjectDialog(null);
+  }
+
+  function openEditRole(r: Role) {
+    setRoleDialog({
+      id: r.id,
+      name: r.name,
+      form: {
+        canApprove: [...r.canApprove],
+        canConfigureIntegrations: r.canConfigureIntegrations,
+        canRunAgents: r.canRunAgents,
+        environmentAccess: [...r.environmentAccess],
+        auditVisibility: r.auditVisibility,
+      },
+    });
+  }
+  async function saveRole() {
+    if (!roleDialog) return;
+    const updated = await settingsService.updateRole(roleDialog.id, roleDialog.form);
+    if (updated) setRoleList((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+    refreshRoles();
+    setRoleDialog(null);
   }
 
   if (!settings) return null;
@@ -86,6 +187,11 @@ export function SettingsPage() {
       </Section>
 
       <Section id="teams" title="Team management">
+        <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+          <Button size="small" startIcon={<AddIcon />} disabled={readOnly} onClick={openNewTeam}>
+            Add team
+          </Button>
+        </Stack>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -93,14 +199,20 @@ export function SettingsPage() {
                 <TableCell>Team</TableCell>
                 <TableCell>Members</TableCell>
                 <TableCell>Projects</TableCell>
+                <TableCell align="right"></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {teams.map((t) => (
+              {teamList.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell>{t.name}</TableCell>
                   <TableCell>{t.memberCount}</TableCell>
-                  <TableCell>{t.projectIds.map((id) => projects.find((p) => p.id === id)?.name).join(', ')}</TableCell>
+                  <TableCell>{t.projectIds.map((id) => projectList.find((p) => p.id === id)?.name).filter(Boolean).join(', ') || '—'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" disabled={readOnly} onClick={() => openEditTeam(t)} aria-label={`Edit ${t.name}`}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -109,6 +221,11 @@ export function SettingsPage() {
       </Section>
 
       <Section id="projects" title="Project management">
+        <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+          <Button size="small" startIcon={<AddIcon />} disabled={readOnly || teamList.length === 0} onClick={openNewProject}>
+            Add project
+          </Button>
+        </Stack>
         <TableContainer>
           <Table size="small">
             <TableHead>
@@ -117,18 +234,24 @@ export function SettingsPage() {
                 <TableCell>Repository</TableCell>
                 <TableCell>Team</TableCell>
                 <TableCell>Environments</TableCell>
+                <TableCell align="right"></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects.map((p) => (
+              {projectList.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell>{p.name}</TableCell>
                   <TableCell sx={{ fontFamily: 'monospace' }}>{p.repository}</TableCell>
-                  <TableCell>{teams.find((t) => t.id === p.teamId)?.name}</TableCell>
+                  <TableCell>{teamList.find((t) => t.id === p.teamId)?.name}</TableCell>
                   <TableCell>
                     <Stack direction="row" gap={0.5}>
                       {p.environment.map((e) => <Chip key={e} size="small" label={e} variant="outlined" />)}
                     </Stack>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" disabled={readOnly} onClick={() => openEditProject(p)} aria-label={`Edit ${p.name}`}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -197,10 +320,11 @@ export function SettingsPage() {
                 <TableCell>Configure integrations</TableCell>
                 <TableCell>Run agents</TableCell>
                 <TableCell>Environment access</TableCell>
+                <TableCell align="right"></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {roles.map((r) => (
+              {roleList.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.canApprove.length > 0 ? <ActionLevelBadge level={Math.max(...r.canApprove)} /> : 'None'}</TableCell>
@@ -211,11 +335,19 @@ export function SettingsPage() {
                       {r.environmentAccess.map((e) => <Chip key={e} size="small" label={e} variant="outlined" />)}
                     </Stack>
                   </TableCell>
+                  <TableCell align="right">
+                    <IconButton size="small" disabled={readOnly} onClick={() => openEditRole(r)} aria-label={`Edit ${r.name} permissions`}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Role names are fixed in this demo; only permission fields can be edited.
+        </Typography>
       </Section>
 
       <Section id="env-restrictions" title="Environment restrictions">
@@ -355,6 +487,208 @@ export function SettingsPage() {
           credentials, or graph entities.
         </Typography>
       </Section>
+
+      <Dialog open={Boolean(teamDialog)} onClose={() => setTeamDialog(null)} maxWidth="sm" fullWidth>
+        {teamDialog && (
+          <>
+            <DialogTitle>{teamDialog.id ? 'Edit team' : 'Add team'}</DialogTitle>
+            <DialogContent dividers>
+              <Stack gap={2} sx={{ mt: 0.5 }}>
+                <TextField
+                  fullWidth
+                  label="Team name"
+                  value={teamDialog.form.name}
+                  onChange={(e) => setTeamDialog({ ...teamDialog, form: { ...teamDialog.form, name: e.target.value } })}
+                />
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Member count"
+                  value={teamDialog.form.memberCount}
+                  onChange={(e) => setTeamDialog({ ...teamDialog, form: { ...teamDialog.form, memberCount: Number(e.target.value) } })}
+                />
+                <FormControl fullWidth>
+                  <InputLabel>Projects</InputLabel>
+                  <Select
+                    multiple
+                    label="Projects"
+                    value={teamDialog.form.projectIds}
+                    onChange={(e) => setTeamDialog({ ...teamDialog, form: { ...teamDialog.form, projectIds: e.target.value as string[] } })}
+                    input={<OutlinedInput label="Projects" />}
+                    renderValue={(selected) => (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {(selected as string[]).map((id) => (
+                          <Chip key={id} size="small" label={projectList.find((p) => p.id === id)?.name ?? id} />
+                        ))}
+                      </Stack>
+                    )}
+                  >
+                    {projectList.map((p) => (
+                      <MenuItem key={p.id} value={p.id}>{p.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setTeamDialog(null)}>Cancel</Button>
+              <Button variant="contained" onClick={saveTeam} disabled={!teamDialog.form.name.trim()}>
+                Save
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      <Dialog open={Boolean(projectDialog)} onClose={() => setProjectDialog(null)} maxWidth="sm" fullWidth>
+        {projectDialog && (
+          <>
+            <DialogTitle>{projectDialog.id ? 'Edit project' : 'Add project'}</DialogTitle>
+            <DialogContent dividers>
+              <Stack gap={2} sx={{ mt: 0.5 }}>
+                <TextField
+                  fullWidth
+                  label="Project name"
+                  value={projectDialog.form.name}
+                  onChange={(e) => setProjectDialog({ ...projectDialog, form: { ...projectDialog.form, name: e.target.value } })}
+                />
+                <TextField
+                  fullWidth
+                  label="Repository"
+                  value={projectDialog.form.repository}
+                  onChange={(e) => setProjectDialog({ ...projectDialog, form: { ...projectDialog.form, repository: e.target.value } })}
+                />
+                <FormControl fullWidth>
+                  <InputLabel>Team</InputLabel>
+                  <Select
+                    label="Team"
+                    value={projectDialog.form.teamId}
+                    onChange={(e) => setProjectDialog({ ...projectDialog, form: { ...projectDialog.form, teamId: e.target.value } })}
+                  >
+                    {teamList.map((t) => (
+                      <MenuItem key={t.id} value={t.id}>{t.name}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Environments</InputLabel>
+                  <Select
+                    multiple
+                    label="Environments"
+                    value={projectDialog.form.environment}
+                    onChange={(e) => setProjectDialog({ ...projectDialog, form: { ...projectDialog.form, environment: e.target.value as Environment[] } })}
+                    input={<OutlinedInput label="Environments" />}
+                    renderValue={(selected) => (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {(selected as Environment[]).map((env) => <Chip key={env} size="small" label={env} />)}
+                      </Stack>
+                    )}
+                  >
+                    {ALL_ENVIRONMENTS.map((env) => (
+                      <MenuItem key={env} value={env}>{env}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setProjectDialog(null)}>Cancel</Button>
+              <Button variant="contained" onClick={saveProject} disabled={!projectDialog.form.name.trim() || !projectDialog.form.teamId}>
+                Save
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      <Dialog open={Boolean(roleDialog)} onClose={() => setRoleDialog(null)} maxWidth="sm" fullWidth>
+        {roleDialog && (
+          <>
+            <DialogTitle>Edit permissions — {roleDialog.name}</DialogTitle>
+            <DialogContent dividers>
+              <Stack gap={2} sx={{ mt: 0.5 }}>
+                <FormControl fullWidth>
+                  <InputLabel>Can approve action levels</InputLabel>
+                  <Select
+                    multiple
+                    label="Can approve action levels"
+                    value={roleDialog.form.canApprove}
+                    onChange={(e) => {
+                      const value = (e.target.value as (ActionLevel | string)[]).map((v) => Number(v) as ActionLevel);
+                      setRoleDialog({ ...roleDialog, form: { ...roleDialog.form, canApprove: value } });
+                    }}
+                    input={<OutlinedInput label="Can approve action levels" />}
+                    renderValue={(selected) => (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {(selected as ActionLevel[]).map((lvl) => <Chip key={lvl} size="small" label={`Level ${lvl}`} />)}
+                      </Stack>
+                    )}
+                  >
+                    {ALL_ACTION_LEVELS.map((lvl) => (
+                      <MenuItem key={lvl} value={lvl}>Level {lvl}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Environment access</InputLabel>
+                  <Select
+                    multiple
+                    label="Environment access"
+                    value={roleDialog.form.environmentAccess}
+                    onChange={(e) => setRoleDialog({ ...roleDialog, form: { ...roleDialog.form, environmentAccess: e.target.value as Environment[] } })}
+                    input={<OutlinedInput label="Environment access" />}
+                    renderValue={(selected) => (
+                      <Stack direction="row" gap={0.5} flexWrap="wrap">
+                        {(selected as Environment[]).map((env) => <Chip key={env} size="small" label={env} />)}
+                      </Stack>
+                    )}
+                  >
+                    {ALL_ENVIRONMENTS.map((env) => (
+                      <MenuItem key={env} value={env}>{env}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Audit visibility</InputLabel>
+                  <Select
+                    label="Audit visibility"
+                    value={roleDialog.form.auditVisibility}
+                    onChange={(e) => setRoleDialog({ ...roleDialog, form: { ...roleDialog.form, auditVisibility: e.target.value as Role['auditVisibility'] } })}
+                  >
+                    {AUDIT_VISIBILITIES.map((v) => (
+                      <MenuItem key={v} value={v}>{v}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={roleDialog.form.canConfigureIntegrations}
+                      onChange={(e) => setRoleDialog({ ...roleDialog, form: { ...roleDialog.form, canConfigureIntegrations: e.target.checked } })}
+                    />
+                  }
+                  label="Can configure integrations"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={roleDialog.form.canRunAgents}
+                      onChange={(e) => setRoleDialog({ ...roleDialog, form: { ...roleDialog.form, canRunAgents: e.target.checked } })}
+                    />
+                  }
+                  label="Can run agents"
+                />
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setRoleDialog(null)}>Cancel</Button>
+              <Button variant="contained" onClick={saveRole}>
+                Save
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 }

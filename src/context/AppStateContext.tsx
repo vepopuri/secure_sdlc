@@ -1,31 +1,51 @@
 import { createContext, useContext, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { Environment, RoleId } from '../types/domain';
-import { roles, defaultRoleId } from '../data/roles';
+import type { Environment, Role, RoleId } from '../types/domain';
+import { roles as seedRoles, defaultRoleId } from '../data/roles';
 import { projects, workspace } from '../data/orgs';
+import { loadPersisted, savePersisted } from '../services/persist';
 
 interface AppState {
   roleId: RoleId;
   setRoleId: (id: RoleId) => void;
-  role: (typeof roles)[number];
+  role: Role;
   environment: Environment;
   setEnvironment: (env: Environment) => void;
   projectId: string;
   setProjectId: (id: string) => void;
   workspaceName: string;
+  /** Re-reads the persisted roles store — call after editing a role's permissions in Settings. */
+  refreshRoles: () => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [roleId, setRoleId] = useState<RoleId>(defaultRoleId);
-  const [environment, setEnvironment] = useState<Environment>('demo');
-  const [projectId, setProjectId] = useState<string>(projects[0].id);
+  const [roleId, setRoleIdState] = useState<RoleId>(() => loadPersisted<RoleId>('roleId') ?? defaultRoleId);
+  const [environment, setEnvironmentState] = useState<Environment>(() => loadPersisted<Environment>('environment') ?? 'demo');
+  const [projectId, setProjectIdState] = useState<string>(() => loadPersisted<string>('projectId') ?? projects[0].id);
+  const [rolesList, setRolesList] = useState<Role[]>(() => loadPersisted<Role[]>('roles') ?? seedRoles);
 
-  const role = useMemo(() => roles.find((r) => r.id === roleId) ?? roles[0], [roleId]);
+  const setRoleId = (id: RoleId) => {
+    setRoleIdState(id);
+    savePersisted('roleId', id);
+  };
+  const setEnvironment = (env: Environment) => {
+    setEnvironmentState(env);
+    savePersisted('environment', env);
+  };
+  const setProjectId = (id: string) => {
+    setProjectIdState(id);
+    savePersisted('projectId', id);
+  };
+  const refreshRoles = () => {
+    setRolesList(loadPersisted<Role[]>('roles') ?? seedRoles);
+  };
+
+  const role = useMemo(() => rolesList.find((r) => r.id === roleId) ?? rolesList[0], [roleId, rolesList]);
 
   const value = useMemo<AppState>(
-    () => ({ roleId, setRoleId, role, environment, setEnvironment, projectId, setProjectId, workspaceName: workspace.name }),
+    () => ({ roleId, setRoleId, role, environment, setEnvironment, projectId, setProjectId, workspaceName: workspace.name, refreshRoles }),
     [roleId, role, environment, projectId],
   );
 

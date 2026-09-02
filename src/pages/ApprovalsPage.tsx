@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -14,6 +14,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Alert from '@mui/material/Alert';
 import Paper from '@mui/material/Paper';
+import LinearProgress from '@mui/material/LinearProgress';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
@@ -21,7 +22,6 @@ import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { ActionLevelBadge, RiskBadge, StatusBadge } from '../components/common/StatusBadge';
 import { approvalService } from '../services';
-import { approvals as seedApprovals } from '../data/approvals';
 import { agents } from '../data/agents';
 import { projects } from '../data/orgs';
 import { useAppState } from '../context/AppStateContext';
@@ -36,9 +36,17 @@ const LEVEL_LEGEND = [
 
 export function ApprovalsPage() {
   const { role } = useAppState();
-  const [items, setItems] = useState<ApprovalItem[]>(seedApprovals);
+  const [items, setItems] = useState<ApprovalItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ApprovalItem['status'] | 'all'>('pending');
   const [detailsItem, setDetailsItem] = useState<ApprovalItem | null>(null);
+
+  useEffect(() => {
+    approvalService.list().then((result) => {
+      setItems(result);
+      setLoading(false);
+    });
+  }, []);
 
   const filtered = statusFilter === 'all' ? items : items.filter((a) => a.status === statusFilter);
 
@@ -82,7 +90,9 @@ export function ApprovalsPage() {
         ))}
       </Stack>
 
-      {filtered.length === 0 ? (
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+      {!loading && filtered.length === 0 ? (
         <EmptyState
           icon={<RateReviewOutlinedIcon fontSize="large" color="disabled" />}
           title="Nothing in this queue"

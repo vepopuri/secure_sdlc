@@ -22,7 +22,7 @@ import type { Agent } from '../types/domain';
 const HEALTH_MAP: Record<string, string> = { on_track: 'on_track', needs_attention: 'needs_attention', blocked: 'blocked' };
 
 export function SdlcPhasesPage() {
-  const { role } = useAppState();
+  const { role, projectId, environment } = useAppState();
   const [agents, setAgents] = useState(seedAgents);
   const [selected, setSelected] = useState<Agent | null>(null);
   const [expanded, setExpanded] = useState<string | false>(sdlcPhases[0].id);
@@ -111,6 +111,7 @@ export function SdlcPhasesPage() {
         onClose={() => setSelected(null)}
         onChanged={handleAgentChanged}
         canRunAgents={role.canRunAgents}
+        context={{ projectId, environment }}
       />
     </Box>
   );

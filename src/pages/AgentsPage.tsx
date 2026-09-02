@@ -30,7 +30,7 @@ import type { Agent } from '../types/domain';
 type TriState = 'any' | 'yes' | 'no';
 
 export function AgentsPage() {
-  const { role } = useAppState();
+  const { role, projectId, environment } = useAppState();
   const [search, setSearch] = useState('');
   const [phaseId, setPhaseId] = useState<string>('all');
   const [category, setCategory] = useState<string>('all');
@@ -80,7 +80,7 @@ export function AgentsPage() {
   }
 
   async function handleRun(agent: Agent) {
-    const updated = await agentService.run(agent.id);
+    const updated = await agentService.run(agent.id, { projectId, environment });
     if (updated) handleAgentChanged(updated);
   }
 
@@ -239,6 +239,7 @@ export function AgentsPage() {
         onClose={() => setSelected(null)}
         onChanged={handleAgentChanged}
         canRunAgents={role.canRunAgents}
+        context={{ projectId, environment }}
       />
     </Box>
   );

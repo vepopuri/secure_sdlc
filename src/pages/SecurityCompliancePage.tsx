@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -10,6 +11,15 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import LinearProgress from '@mui/material/LinearProgress';
 import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ToggleButton from '@mui/material/ToggleButton';
+import SearchIcon from '@mui/icons-material/Search';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
@@ -19,10 +29,20 @@ import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
 import GppMaybeOutlinedIcon from '@mui/icons-material/GppMaybeOutlined';
 import { PageHeader } from '../components/common/PageHeader';
 import { SeverityBadge, StatusBadge } from '../components/common/StatusBadge';
-import { securityFindings, complianceEvidenceStatus, openExceptionsCount, approvalTrend7dPct, remediationAgingBuckets } from '../data/security';
+import { TrendChart } from '../components/common/TrendChart';
+import {
+  securityFindings,
+  complianceEvidenceStatus,
+  openExceptionsCount,
+  approvalTrend7dPct,
+  approvalVolumeTrend7d,
+  remediationAgingBuckets,
+} from '../data/security';
 import type { SecurityFinding } from '../types/domain';
 
 const SEVERITIES: SecurityFinding['severity'][] = ['critical', 'high', 'medium', 'low'];
+const STATUSES: SecurityFinding['status'][] = ['open', 'in_progress', 'accepted_risk', 'resolved'];
+const SEVERITY_RANK: Record<SecurityFinding['severity'], number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 const CATEGORY_SECTIONS: { id: SecurityFinding['category']; label: string; icon: typeof ShieldOutlinedIcon }[] = [
   { id: 'identity', label: 'Identity security', icon: AdminPanelSettingsOutlinedIcon },
@@ -37,6 +57,11 @@ const CATEGORY_SECTIONS: { id: SecurityFinding['category']; label: string; icon:
 ];
 
 export function SecurityCompliancePage() {
+  const [search, setSearch] = useState('');
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'age' | 'severity'>('age');
+
   const openFindings = securityFindings.filter((f) => f.status === 'open' || f.status === 'in_progress');
   const severityCounts = Object.fromEntries(SEVERITIES.map((s) => [s, openFindings.filter((f) => f.severity === s).length]));
   const criticalCount = severityCounts.critical ?? 0;
@@ -56,6 +81,26 @@ export function SecurityCompliancePage() {
     { label: 'Data governance gaps', value: dataGovernanceGapCount },
     { label: 'Policy violations', value: policyViolationCount },
     { label: 'Open exceptions', value: openExceptionsCount },
+  ];
+
+  const filteredFindings = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let results = securityFindings.filter((f) => {
+      if (severityFilter !== 'all' && f.severity !== severityFilter) return false;
+      if (statusFilter !== 'all' && f.status !== statusFilter) return false;
+      if (q && !`${f.title} ${f.description}`.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    results = [...results].sort((a, b) =>
+      sortBy === 'age' ? b.ageDays - a.ageDays : SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity],
+    );
+    return results;
+  }, [search, severityFilter, statusFilter, sortBy]);
+
+  const trendSeries = [
+    { label: 'Approved', color: '#86BC25', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.approved })) },
+    { label: 'Rejected', color: '#C4262E', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.rejected })) },
+    { label: 'Pending', color: '#B98900', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.pending })) },
   ];
 
   return (
@@ -148,12 +193,61 @@ export function SecurityCompliancePage() {
         </Grid>
       </Paper>
 
+      <Paper sx={{ p: 2.5, mb: 4 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Approval volume trend, last 7 days
+        </Typography>
+        <TrendChart series={trendSeries} />
+      </Paper>
+
       <Typography variant="h2" sx={{ mb: 2 }}>
         Findings by domain
       </Typography>
+
+      <Paper sx={{ p: 2, mb: 2 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search findings by title or description…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ mb: 2 }}
+          InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }}
+        />
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap alignItems="center">
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Severity</InputLabel>
+            <Select label="Severity" value={severityFilter} onChange={(e) => setSeverityFilter(e.target.value)}>
+              <MenuItem value="all">Any severity</MenuItem>
+              {SEVERITIES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <InputLabel>Status</InputLabel>
+            <Select label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <MenuItem value="all">Any status</MenuItem>
+              {STATUSES.map((s) => <MenuItem key={s} value={s}>{s.replace('_', ' ')}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={sortBy}
+            onChange={(_, v) => v && setSortBy(v)}
+            aria-label="Sort findings"
+          >
+            <ToggleButton value="age">Sort: oldest first</ToggleButton>
+            <ToggleButton value="severity">Sort: severity</ToggleButton>
+          </ToggleButtonGroup>
+          <Typography variant="caption" color="text.secondary">
+            {filteredFindings.length} of {securityFindings.length} findings shown
+          </Typography>
+        </Stack>
+      </Paper>
+
       <Grid container spacing={2}>
         {CATEGORY_SECTIONS.map((section) => {
-          const findings = securityFindings.filter((f) => f.category === section.id);
+          const findings = filteredFindings.filter((f) => f.category === section.id);
           const Icon = section.icon;
           return (
             <Grid key={section.id} size={{ xs: 12, md: 6 }}>
@@ -164,7 +258,7 @@ export function SecurityCompliancePage() {
                 </Stack>
                 {findings.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
-                    No findings recorded in this demo dataset.
+                    No findings match the current filters.
                   </Typography>
                 ) : (
                   <List dense disablePadding>

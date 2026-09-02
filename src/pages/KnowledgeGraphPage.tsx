@@ -16,19 +16,20 @@ import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
 import Alert from '@mui/material/Alert';
+import LinearProgress from '@mui/material/LinearProgress';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/Search';
 import ShareIcon from '@mui/icons-material/Share';
+import AddIcon from '@mui/icons-material/Add';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { EntityDrawer } from '../components/kg/EntityDrawer';
 import { EntityGraphView } from '../components/kg/EntityGraphView';
-import { KG_DOMAINS, kgEntities, getEntityById } from '../data/knowledgeGraph';
+import { KG_DOMAINS } from '../data/knowledgeGraph';
 import { projects } from '../data/orgs';
+import { knowledgeGraphService } from '../services';
 import type { KgDomain, KgEntity } from '../types/domain';
-
-const RELATIONSHIP_TYPES = Array.from(new Set(kgEntities.flatMap((e) => e.relationships.map((r) => r.type)))).sort();
 
 const TIME_RANGES = [
   { id: 'all', label: 'All time', days: Infinity },
@@ -45,11 +46,34 @@ export function KnowledgeGraphPage() {
   const [relationshipType, setRelationshipType] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<'view' | 'create'>('view');
   const [graphView, setGraphView] = useState(false);
   const [impactHighlighted, setImpactHighlighted] = useState(false);
 
+  const [allEntities, setAllEntities] = useState<KgEntity[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    knowledgeGraphService.search({}).then((result) => {
+      if (!cancelled) {
+        setAllEntities(result);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const relationshipTypes = useMemo(
+    () => Array.from(new Set(allEntities.flatMap((e) => e.relationships.map((r) => r.type)))).sort(),
+    [allEntities],
+  );
+
   const results = useMemo(() => {
-    let items = kgEntities;
+    let items = allEntities;
     if (search) {
       const q = search.toLowerCase();
       items = items.filter((e) => `${e.name} ${e.summary} ${e.entityType}`.toLowerCase().includes(q));
@@ -63,16 +87,16 @@ export function KnowledgeGraphPage() {
       items = items.filter((e) => new Date(e.lastUpdated).getTime() >= cutoff);
     }
     return items;
-  }, [search, selectedDomains, projectId, relationshipType, timeRange]);
+  }, [allEntities, search, selectedDomains, projectId, relationshipType, timeRange]);
 
-  const selectedEntity = selectedId ? getEntityById(selectedId) : null;
+  const selectedEntity = selectedId ? allEntities.find((e) => e.id === selectedId) ?? null : null;
   const neighborhood = useMemo(() => {
     if (!selectedEntity) return null;
     const neighbors = selectedEntity.relationships
-      .map((r) => getEntityById(r.targetEntityId))
+      .map((r) => allEntities.find((e) => e.id === r.targetEntityId))
       .filter((e): e is KgEntity => Boolean(e));
     return { center: selectedEntity, neighbors };
-  }, [selectedEntity]);
+  }, [selectedEntity, allEntities]);
 
   useEffect(() => {
     if (!selectedId) {
@@ -87,7 +111,24 @@ export function KnowledgeGraphPage() {
 
   function openEntity(id: string) {
     setSelectedId(id);
+    setDrawerMode('view');
     setDrawerOpen(true);
+  }
+
+  function openNewEntity() {
+    setSelectedId(null);
+    setDrawerMode('create');
+    setDrawerOpen(true);
+  }
+
+  // Refetches the full entity list (rather than patching one entity locally)
+  // so that reciprocal relationships written onto a *different* entity by
+  // addRelationship are picked up too, not just the entity being edited.
+  function handleEntityChanged(entityId: string) {
+    knowledgeGraphService.search({}).then((result) => {
+      setAllEntities(result);
+      setSelectedId(entityId);
+    });
   }
 
   return (
@@ -142,7 +183,7 @@ export function KnowledgeGraphPage() {
               <InputLabel>Relationship type</InputLabel>
               <Select label="Relationship type" value={relationshipType} onChange={(e) => setRelationshipType(e.target.value)}>
                 <MenuItem value="all">All relationship types</MenuItem>
-                {RELATIONSHIP_TYPES.map((t) => (
+                {relationshipTypes.map((t) => (
                   <MenuItem key={t} value={t}>{t.replace(/_/g, ' ')}</MenuItem>
                 ))}
               </Select>
@@ -171,21 +212,28 @@ export function KnowledgeGraphPage() {
         <Typography variant="body2" color="text.secondary">
           {results.length} entities
         </Typography>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<ShareIcon />}
-          disabled={!selectedId}
-          onClick={() => {
-            setGraphView(true);
-            setImpactHighlighted(true);
-          }}
-        >
-          Show impact path
-        </Button>
+        <Stack direction="row" gap={1}>
+          <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openNewEntity}>
+            New entity
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<ShareIcon />}
+            disabled={!selectedId}
+            onClick={() => {
+              setGraphView(true);
+              setImpactHighlighted(true);
+            }}
+          >
+            Show impact path
+          </Button>
+        </Stack>
       </Stack>
 
-      {results.length === 0 ? (
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+      {!loading && results.length === 0 ? (
         <EmptyState title="No entities match these filters" description="Try a different search term or clear a domain filter." />
       ) : (
         <Grid container spacing={1.5} sx={{ mb: 3 }}>
@@ -245,7 +293,15 @@ export function KnowledgeGraphPage() {
         </Paper>
       )}
 
-      <EntityDrawer entity={selectedEntity ?? null} open={drawerOpen} onClose={() => setDrawerOpen(false)} onSelectRelated={openEntity} />
+      <EntityDrawer
+        entity={selectedEntity ?? null}
+        mode={drawerMode}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onSelectRelated={openEntity}
+        onChanged={handleEntityChanged}
+        allEntities={allEntities}
+      />
     </Box>
   );
 }
