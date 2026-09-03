@@ -8,7 +8,9 @@ import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import CloseIcon from '@mui/icons-material/Close';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { McpConnector } from '../../types/domain';
 import { StatusBadge } from '../common/StatusBadge';
 import { agents } from '../../data/agents';
@@ -34,6 +36,7 @@ export function ConnectorDetailsDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const navigate = useNavigate();
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -66,6 +69,20 @@ export function ConnectorDetailsDrawer({
         <Typography variant="body2" sx={{ mb: 2 }}>
           {connector.description}
         </Typography>
+
+        <Button
+          variant="outlined"
+          size="small"
+          fullWidth
+          startIcon={<AccountTreeOutlinedIcon />}
+          onClick={() => {
+            onClose();
+            navigate(`/mcp/${connector.id}/workflow`);
+          }}
+          sx={{ mb: 2 }}
+        >
+          See how it works
+        </Button>
 
         <Section title="Connected systems">
           <Typography variant="body2">{connector.connectedSystems.join(', ')}</Typography>

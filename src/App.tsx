@@ -4,7 +4,9 @@ import { OverviewPage } from './pages/OverviewPage';
 import { GetStartedPage } from './pages/GetStartedPage';
 import { SdlcPhasesPage } from './pages/SdlcPhasesPage';
 import { AgentsPage } from './pages/AgentsPage';
+import { AgentWorkflowPage } from './pages/AgentWorkflowPage';
 import { McpConnectionsPage } from './pages/McpConnectionsPage';
+import { ConnectorWorkflowPage } from './pages/ConnectorWorkflowPage';
 import { KnowledgeGraphPage } from './pages/KnowledgeGraphPage';
 import { PlatformComponentsPage } from './pages/PlatformComponentsPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
@@ -22,7 +24,9 @@ function App() {
         <Route path="/get-started" element={<GetStartedPage />} />
         <Route path="/phases" element={<SdlcPhasesPage />} />
         <Route path="/agents" element={<AgentsPage />} />
+        <Route path="/agents/:agentId/workflow" element={<AgentWorkflowPage />} />
         <Route path="/mcp" element={<McpConnectionsPage />} />
+        <Route path="/mcp/:connectorId/workflow" element={<ConnectorWorkflowPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/components" element={<PlatformComponentsPage />} />
         <Route path="/workflows" element={<WorkflowsPage />} />
