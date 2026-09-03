@@ -52,7 +52,7 @@ export const theme = createTheme({
     error: { main: palette.red },
     info: { main: palette.sky },
     background: { default: palette.lightBg, paper: palette.white },
-    text: { primary: '#12181D', secondary: '#56636B' },
+    text: { primary: '#1D1D1F', secondary: '#6E7780' },
     brand: { charcoal: palette.abyss, black: palette.ink, blue: palette.indigo, glow: palette.glow },
   },
   shape: { borderRadius: 12 },
@@ -67,11 +67,22 @@ export const theme = createTheme({
     subtitle1: { fontWeight: 500 },
     overline: { fontWeight: 700, fontSize: '0.7rem', letterSpacing: '0.09em' },
     button: { textTransform: 'none', fontWeight: 600, letterSpacing: '0.01em' },
+    body1: { lineHeight: 1.6 },
+    body2: { lineHeight: 1.55 },
   },
   components: {
     MuiButton: {
       styleOverrides: {
-        root: { borderRadius: 10, paddingInline: '18px' },
+        root: {
+          borderRadius: 10,
+          paddingInline: '18px',
+          transition: 'transform 120ms ease, box-shadow 180ms ease, background-color 180ms ease',
+          '&:active': { transform: 'scale(0.97)' },
+        },
+        contained: {
+          boxShadow: '0 1px 2px rgba(4,7,11,0.08), 0 6px 16px rgba(4,7,11,0.08)',
+          '&:hover': { boxShadow: '0 2px 4px rgba(4,7,11,0.1), 0 10px 24px rgba(4,7,11,0.12)' },
+        },
       },
     },
     MuiCard: {
@@ -79,8 +90,14 @@ export const theme = createTheme({
         root: {
           border: 'none',
           boxShadow: '0 1px 2px rgba(4,7,11,0.06), 0 8px 20px rgba(4,7,11,0.05)',
-          transition: 'box-shadow 180ms ease',
-          '&:hover': { boxShadow: '0 2px 4px rgba(4,7,11,0.08), 0 14px 32px rgba(4,7,11,0.08)' },
+          transition: 'box-shadow 220ms ease, transform 220ms ease',
+          // Cards that wrap a clickable CardActionArea lift on hover; plain informational
+          // cards (no CardActionArea inside) never gain the transform, so nothing jumps
+          // around on hover unless it's actually interactive.
+          '&:has(.MuiCardActionArea-root:hover)': {
+            transform: 'translateY(-3px)',
+            boxShadow: '0 4px 8px rgba(4,7,11,0.08), 0 18px 36px rgba(4,7,11,0.1)',
+          },
         },
       },
     },

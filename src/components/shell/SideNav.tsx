@@ -69,19 +69,20 @@ export function SideNav({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
           onClose();
         }}
         sx={{
-          borderRadius: 1.5,
-          mb: 0.5,
-          color: active ? '#04070B' : '#E4E4E2',
-          bgcolor: active ? 'primary.main' : 'transparent',
-          '&:hover': { bgcolor: active ? 'primary.main' : 'rgba(255,255,255,0.08)' },
-          '&.Mui-selected': { bgcolor: 'primary.main' },
-          '&.Mui-selected:hover': { bgcolor: 'primary.dark' },
+          borderRadius: 2,
+          mb: 0.25,
+          color: active ? '#5EEAD4' : '#C7CDD2',
+          bgcolor: active ? 'rgba(94,234,212,0.12)' : 'transparent',
+          transition: 'background-color 150ms ease, color 150ms ease',
+          '&:hover': { bgcolor: active ? 'rgba(94,234,212,0.16)' : 'rgba(255,255,255,0.06)' },
+          '&.Mui-selected': { bgcolor: 'rgba(94,234,212,0.12)' },
+          '&.Mui-selected:hover': { bgcolor: 'rgba(94,234,212,0.16)' },
         }}
       >
-        <ListItemIcon sx={{ color: active ? '#04070B' : '#B7B6B2', minWidth: 36 }}>
+        <ListItemIcon sx={{ color: active ? '#5EEAD4' : '#8B959C', minWidth: 36 }}>
           <Icon fontSize="small" />
         </ListItemIcon>
-        <ListItemText primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: active ? 700 : 500 }} primary={item.label} />
+        <ListItemText primaryTypographyProps={{ fontSize: '0.875rem', fontWeight: active ? 600 : 500 }} primary={item.label} />
       </ListItemButton>
     );
   }

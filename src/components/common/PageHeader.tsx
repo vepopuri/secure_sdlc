@@ -17,7 +17,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, breadcrumbs, actions, showDemoChip = true }: PageHeaderProps) {
   return (
-    <Box sx={{ mb: 3, position: 'relative' }}>
+    <Box sx={{ mb: 4, position: 'relative' }}>
       <Box sx={{ position: 'absolute', top: -8, right: 0, width: 180, height: 90, overflow: 'hidden', zIndex: -1 }}>
         <ConnectorMotif variant="panel" opacity={0.06} />
       </Box>
@@ -38,13 +38,13 @@ export function PageHeader({ title, description, breadcrumbs, actions, showDemoC
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2}>
         <Box>
           <Stack direction="row" alignItems="center" gap={1.5}>
-            <Typography variant="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, fontWeight: 700 }}>
+            <Typography variant="h1" sx={{ fontSize: { xs: '1.7rem', md: '2.15rem' }, fontWeight: 700, letterSpacing: '-0.015em' }}>
               {title}
             </Typography>
             {showDemoChip && <DemoDataChip />}
           </Stack>
           {description && (
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5, maxWidth: 720 }}>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.75, maxWidth: 720, fontSize: '1.02rem' }}>
               {description}
             </Typography>
           )}
