@@ -1,0 +1,40 @@
+import { Routes, Route } from 'react-router-dom';
+import { AppShell } from './components/shell/AppShell';
+import { OverviewPage } from './pages/OverviewPage';
+import { GetStartedPage } from './pages/GetStartedPage';
+import { SdlcPhasesPage } from './pages/SdlcPhasesPage';
+import { AgentsPage } from './pages/AgentsPage';
+import { McpConnectionsPage } from './pages/McpConnectionsPage';
+import { KnowledgeGraphPage } from './pages/KnowledgeGraphPage';
+import { PlatformComponentsPage } from './pages/PlatformComponentsPage';
+import { WorkflowsPage } from './pages/WorkflowsPage';
+import { WorkflowDetailsPage } from './pages/WorkflowDetailsPage';
+import { ApprovalsPage } from './pages/ApprovalsPage';
+import { SecurityCompliancePage } from './pages/SecurityCompliancePage';
+import { ActivityAuditPage } from './pages/ActivityAuditPage';
+import { SettingsPage } from './pages/SettingsPage';
+
+function App() {
+  return (
+    <Routes>
+      <Route element={<AppShell />}>
+        <Route path="/" element={<OverviewPage />} />
+        <Route path="/get-started" element={<GetStartedPage />} />
+        <Route path="/phases" element={<SdlcPhasesPage />} />
+        <Route path="/agents" element={<AgentsPage />} />
+        <Route path="/mcp" element={<McpConnectionsPage />} />
+        <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
+        <Route path="/components" element={<PlatformComponentsPage />} />
+        <Route path="/workflows" element={<WorkflowsPage />} />
+        <Route path="/workflows/:workflowId" element={<WorkflowDetailsPage />} />
+        <Route path="/approvals" element={<ApprovalsPage />} />
+        <Route path="/security" element={<SecurityCompliancePage />} />
+        <Route path="/audit" element={<ActivityAuditPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<OverviewPage />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default App;
