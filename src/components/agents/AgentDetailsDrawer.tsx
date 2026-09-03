@@ -19,7 +19,9 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Link from '@mui/material/Link';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Agent, Environment } from '../../types/domain';
 import { RiskBadge, StatusBadge, ActionLevelBadge } from '../common/StatusBadge';
 import { agents as allAgents } from '../../data/agents';
@@ -49,6 +51,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 }
 
 export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgents, context }: AgentDetailsDrawerProps) {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [runResult, setRunResult] = useState<string | null>(null);
   const [liveBusy, setLiveBusy] = useState(false);
@@ -104,6 +107,20 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
           <ActionLevelBadge level={agent.approvalLevel} />
           <Chip size="small" variant="outlined" label={agent.category === 'core' ? 'Core SDLC agent' : 'Cross-cutting agent'} />
         </Stack>
+
+        <Button
+          variant="outlined"
+          size="small"
+          fullWidth
+          startIcon={<AccountTreeOutlinedIcon />}
+          onClick={() => {
+            onClose();
+            navigate(`/agents/${agent.id}/workflow`);
+          }}
+          sx={{ mb: 2 }}
+        >
+          See how it works
+        </Button>
 
         {impactsProduction && (
           <Alert severity="warning" sx={{ mb: 2 }}>
