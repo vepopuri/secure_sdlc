@@ -30,6 +30,7 @@ import GppMaybeOutlinedIcon from '@mui/icons-material/GppMaybeOutlined';
 import { PageHeader } from '../components/common/PageHeader';
 import { SeverityBadge, StatusBadge } from '../components/common/StatusBadge';
 import { TrendChart } from '../components/common/TrendChart';
+import { chartColors } from '../theme/theme';
 import {
   securityFindings,
   complianceEvidenceStatus,
@@ -98,9 +99,9 @@ export function SecurityCompliancePage() {
   }, [search, severityFilter, statusFilter, sortBy]);
 
   const trendSeries = [
-    { label: 'Approved', color: '#86BC25', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.approved })) },
-    { label: 'Rejected', color: '#C4262E', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.rejected })) },
-    { label: 'Pending', color: '#B98900', points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.pending })) },
+    { label: 'Approved', color: chartColors.positive, points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.approved })) },
+    { label: 'Rejected', color: chartColors.negative, points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.rejected })) },
+    { label: 'Pending', color: chartColors.neutral, points: approvalVolumeTrend7d.map((d) => ({ x: new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }), y: d.pending })) },
   ];
 
   return (

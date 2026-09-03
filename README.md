@@ -1,9 +1,10 @@
-# Agentic SDLC Platform — Web Application
+# Octopus — Secure SDLC Intelligence Platform
 
-An AI-powered software delivery control plane that connects planning, design, development, testing, security,
-deployment, operations, compliance, and feedback. This repository contains the **frontend application shell** for
-the platform: a React + TypeScript + Material UI app with a full, typed mock data layer and a mock service layer
-designed so a real backend can be dropped in later without a UI redesign.
+Octopus is an AI-powered software delivery control plane — one governing intelligence coordinating many specialized
+agents across planning, design, development, testing, security, deployment, operations, compliance, and feedback.
+This repository contains the **frontend application shell** for the platform: a React + TypeScript + Material UI app
+with a full, typed mock data layer and a mock service layer designed so a real backend can be dropped in later
+without a UI redesign.
 
 This is a **demo build**. All data — agents, MCP connectors, workflows, approvals, security findings, audit
 events — is realistic mock data, clearly labeled throughout the UI with a "Demo data" chip. The one exception is the

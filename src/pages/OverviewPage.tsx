@@ -29,7 +29,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { PhaseCard } from '../components/phases/PhaseCard';
 import { DemoDataChip } from '../components/common/DemoDataChip';
-import { OctopusMark } from '../components/common/OctopusMark';
+import { ConnectorMotif } from '../components/common/ConnectorMotif';
 import { sdlcPhases } from '../data/phases';
 import { agents, CORE_AGENT_COUNT, CROSS_CUTTING_AGENT_COUNT, TOTAL_AGENT_COUNT } from '../data/agents';
 import { sourceConnectors, platformMcpServices } from '../data/mcpConnectors';
@@ -101,34 +101,40 @@ export function OverviewPage() {
 
       <Paper
         sx={{
-          p: { xs: 3, md: 4 },
+          p: { xs: 4, md: 6 },
           mb: 3,
-          background: 'linear-gradient(135deg, #0A0A0A 0%, #282728 60%, #1c3a17 100%)',
+          background: 'linear-gradient(160deg, #04070B 0%, #101820 55%, #0E838D 100%)',
           color: '#fff',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        <Box sx={{ position: 'absolute', right: -20, top: -20, opacity: 0.25 }}>
-          <OctopusMark size={220} />
+        <Box sx={{ position: 'absolute', inset: 0, opacity: 0.35 }}>
+          <ConnectorMotif variant="hero" animated />
         </Box>
-        <Box sx={{ maxWidth: 640, position: 'relative' }}>
+        <Box sx={{ maxWidth: 680, position: 'relative' }}>
           <DemoDataChip label="Demo workspace" />
-          <Typography variant="h1" sx={{ mt: 1.5, mb: 1, fontSize: { xs: '1.6rem', md: '2.1rem' } }}>
+          <Typography variant="overline" sx={{ display: 'block', mt: 2, color: '#5EEAD4' }}>
+            Octopus — Secure SDLC Intelligence
+          </Typography>
+          <Typography
+            variant="h1"
+            sx={{ mt: 1, mb: 1.5, fontSize: { xs: '2.1rem', sm: '2.75rem', md: '3.5rem' }, fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.05 }}
+          >
             Build, secure, and operate software with governed AI agents
           </Typography>
-          <Typography variant="body1" sx={{ color: 'grey.300', mb: 3 }}>
-            Connect your engineering tools, activate the right agents, and surface cross-phase intelligence from one
-            workspace.
+          <Typography variant="body1" sx={{ color: 'grey.300', mb: 3, fontSize: '1.05rem' }}>
+            One governing intelligence, coordinating specialized agents at every limb — connect your engineering
+            tools, activate the right agents, and surface cross-phase intelligence from one workspace.
           </Typography>
           <Stack direction="row" gap={1.5} flexWrap="wrap">
             <Button variant="contained" startIcon={<RocketLaunchIcon />} onClick={() => navigate('/get-started')}>
               Start setup
             </Button>
-            <Button variant="outlined" sx={{ color: '#fff', borderColor: 'grey.500' }} startIcon={<AccountTreeIcon />} onClick={() => navigate('/components')}>
+            <Button variant="outlined" sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} startIcon={<AccountTreeIcon />} onClick={() => navigate('/components')}>
               Explore the architecture
             </Button>
-            <Button variant="outlined" sx={{ color: '#fff', borderColor: 'grey.500' }} startIcon={<PlayCircleIcon />} onClick={() => navigate('/workflows')}>
+            <Button variant="outlined" sx={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }} startIcon={<PlayCircleIcon />} onClick={() => navigate('/workflows')}>
               Run a sample workflow
             </Button>
           </Stack>
@@ -141,7 +147,7 @@ export function OverviewPage() {
         <strong>35 source MCP connectors</strong> and <strong>2 platform MCP services</strong>.
       </Alert>
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {summaryCards.map((card) => (
           <Grid key={card.label} size={{ xs: 6, sm: 4, md: 3 }}>
             <Card sx={{ cursor: 'pointer', height: '100%' }} onClick={() => navigate(card.path)}>
@@ -164,7 +170,7 @@ export function OverviewPage() {
       <Typography variant="h2" sx={{ mb: 2 }}>
         SDLC phases
       </Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {sdlcPhases.map((phase) => (
           <Grid key={phase.id} size={{ xs: 12, sm: 6, lg: 4 }}>
             <PhaseCard phase={phase} agentCount={phase.agentIds.length} onOpen={() => navigate('/phases')} />
@@ -178,7 +184,7 @@ export function OverviewPage() {
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {crossCuttingAgents.length} agents operate across multiple SDLC phases rather than owning a single one.
       </Typography>
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={2.5} sx={{ mb: 4 }}>
         {CROSS_CUTTING_GROUPS.map((group) => {
           const Icon = group.icon;
           const count = crossCuttingAgents.filter((a) => group.match(a.name)).length;

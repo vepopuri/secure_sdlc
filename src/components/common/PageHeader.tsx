@@ -5,6 +5,7 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import type { ReactNode } from 'react';
 import { DemoDataChip } from './DemoDataChip';
+import { ConnectorMotif } from './ConnectorMotif';
 
 interface PageHeaderProps {
   title: string;
@@ -16,7 +17,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, breadcrumbs, actions, showDemoChip = true }: PageHeaderProps) {
   return (
-    <Box sx={{ mb: 3 }}>
+    <Box sx={{ mb: 3, position: 'relative' }}>
+      <Box sx={{ position: 'absolute', top: -8, right: 0, width: 180, height: 90, overflow: 'hidden', zIndex: -1 }}>
+        <ConnectorMotif variant="panel" opacity={0.06} />
+      </Box>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumbs sx={{ mb: 1 }} aria-label="breadcrumb">
           {breadcrumbs.map((b, i) => (
@@ -34,7 +38,7 @@ export function PageHeader({ title, description, breadcrumbs, actions, showDemoC
       <Stack direction="row" alignItems="flex-start" justifyContent="space-between" flexWrap="wrap" gap={2}>
         <Box>
           <Stack direction="row" alignItems="center" gap={1.5}>
-            <Typography variant="h1" sx={{ fontSize: { xs: '1.5rem', md: '1.8rem' } }}>
+            <Typography variant="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, fontWeight: 700 }}>
               {title}
             </Typography>
             {showDemoChip && <DemoDataChip />}

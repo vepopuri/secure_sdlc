@@ -36,10 +36,10 @@ const ENV_LABELS: Record<Environment, string> = {
 };
 
 const ENV_COLOR: Record<Environment, string> = {
-  demo: '#00A3E0',
-  development: '#86BC25',
-  staging: '#B98900',
-  production: '#C4262E',
+  demo: '#3E6FFA',
+  development: '#17B6C4',
+  staging: '#E0A526',
+  production: '#D6323B',
 };
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
@@ -52,7 +52,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
     <AppBar
       position="fixed"
       elevation={0}
-      sx={{ bgcolor: 'brand.black', color: '#fff', zIndex: (t) => t.zIndex.drawer + 1, borderBottom: '1px solid #222' }}
+      sx={{ bgcolor: 'brand.black', color: '#fff', zIndex: (t) => t.zIndex.drawer + 1, borderBottom: '1px solid rgba(255,255,255,0.08)' }}
     >
       <Toolbar sx={{ gap: 1.5 }}>
         <IconButton
@@ -68,22 +68,22 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
         <Stack direction="row" alignItems="center" gap={1} sx={{ cursor: 'pointer', mr: 1 }} onClick={() => navigate('/')}>
           <OctopusMark size={30} />
           <Box>
-            <Typography variant="subtitle1" sx={{ lineHeight: 1.1, fontWeight: 700 }}>
-              Agentic SDLC Platform
+            <Typography variant="subtitle1" sx={{ lineHeight: 1.1, fontWeight: 800, letterSpacing: '-0.01em' }}>
+              Octopus
             </Typography>
             <Typography variant="caption" sx={{ color: 'grey.400', lineHeight: 1 }}>
-              One brain, many agents
+              Secure SDLC Intelligence
             </Typography>
           </Box>
         </Stack>
 
-        <Divider orientation="vertical" flexItem sx={{ borderColor: '#333', display: { xs: 'none', lg: 'block' } }} />
+        <Divider orientation="vertical" flexItem sx={{ borderColor: 'rgba(255,255,255,0.1)', display: { xs: 'none', lg: 'block' } }} />
 
         <Stack direction="row" gap={1} sx={{ display: { xs: 'none', lg: 'flex' } }}>
           <Select
             value={workspace.id}
             size="small"
-            sx={{ color: '#fff', minWidth: 200, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#3a3a3a' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
+            sx={{ color: '#fff', minWidth: 200, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1B2731' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
           >
             <MenuItem value={workspace.id}>{workspace.name}</MenuItem>
           </Select>
@@ -91,7 +91,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
             value={projectId}
             size="small"
             onChange={(e) => setProjectId(e.target.value)}
-            sx={{ color: '#fff', minWidth: 170, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#3a3a3a' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
+            sx={{ color: '#fff', minWidth: 170, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1B2731' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
           >
             {projects.map((p) => (
               <MenuItem key={p.id} value={p.id}>
@@ -105,7 +105,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
           sx={{
             display: { xs: 'none', md: 'flex' },
             alignItems: 'center',
-            bgcolor: '#1a1a1a',
+            bgcolor: '#1B2731',
             borderRadius: 1,
             px: 1.5,
             py: 0.5,
@@ -133,10 +133,10 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
               <Chip
                 size="small"
                 label={ENV_LABELS[v as Environment]}
-                sx={{ bgcolor: ENV_COLOR[v as Environment], color: '#0A0A0A', fontWeight: 700 }}
+                sx={{ bgcolor: ENV_COLOR[v as Environment], color: v === 'production' ? '#fff' : '#04070B', fontWeight: 700 }}
               />
             )}
-            sx={{ color: '#fff', minWidth: 130, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#3a3a3a' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
+            sx={{ color: '#fff', minWidth: 130, '& .MuiOutlinedInput-notchedOutline': { borderColor: '#1B2731' }, '& .MuiSvgIcon-root': { color: '#aaa' } }}
           >
             {(Object.keys(ENV_LABELS) as Environment[]).map((env) => (
               <MenuItem key={env} value={env}>
@@ -170,7 +170,7 @@ export function Header({ onMenuClick }: { onMenuClick: () => void }) {
 
         <Tooltip title="Profile and role (demo role switcher)">
           <IconButton onClick={(e) => setProfileAnchor(e.currentTarget)} aria-label="User profile menu">
-            <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main', color: '#0A0A0A', fontSize: '0.85rem', fontWeight: 700 }}>
+            <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.main', color: '#04070B', fontSize: '0.85rem', fontWeight: 700 }}>
               {role.name.slice(0, 1)}
             </Avatar>
           </IconButton>

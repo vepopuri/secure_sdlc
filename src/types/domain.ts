@@ -1,4 +1,4 @@
-// Shared domain types for the Agentic SDLC Platform frontend.
+// Shared domain types for Octopus, the secure SDLC intelligence platform.
 // These types describe the shape of data the mock service layer returns today
 // and that a real backend API would return tomorrow. Keep this file as the
 // single source of truth for cross-cutting shapes.

@@ -9,10 +9,11 @@ interface OctopusMarkProps {
 }
 
 /**
- * Brand mark for the Agentic SDLC Platform: a central "main brain" with eight
- * branches, each ending in a smaller node-brain. The idea it signals is
- * distributed intelligence — one governing mind, many specialized agents
- * acting at the edges — used sparingly as a logo, not as a literal diagram.
+ * Brand mark for Octopus, the secure SDLC intelligence platform: a central
+ * "main brain" with eight branches, each ending in a smaller node-brain. The
+ * idea it signals is distributed intelligence — one governing mind, many
+ * specialized agents acting at the edges — used sparingly as a logo, not as
+ * a literal diagram.
  */
 export function OctopusMark({ size = 32, variant = 'mark' }: OctopusMarkProps) {
   const gradId = useId();
@@ -29,13 +30,13 @@ export function OctopusMark({ size = 32, variant = 'mark' }: OctopusMarkProps) {
       width={size}
       height={size}
       role="img"
-      aria-label="Agentic SDLC Platform"
+      aria-label="Octopus"
       sx={{ display: 'block', flexShrink: 0 }}
     >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#86BC25" />
-          <stop offset="100%" stopColor="#00A3E0" />
+          <stop offset="0%" stopColor="#17B6C4" />
+          <stop offset="100%" stopColor="#3E6FFA" />
         </linearGradient>
       </defs>
       {nodes.map((n) => (
@@ -50,9 +51,9 @@ export function OctopusMark({ size = 32, variant = 'mark' }: OctopusMarkProps) {
         />
       ))}
       {variant === 'mark' &&
-        nodes.map((n) => <circle key={`node-${n.i}`} cx={n.x} cy={n.y} r={4.5} fill="#00A3E0" opacity={0.9} />)}
+        nodes.map((n) => <circle key={`node-${n.i}`} cx={n.x} cy={n.y} r={4.5} fill="#5EEAD4" opacity={0.9} />)}
       <circle cx={50} cy={50} r={16} fill={`url(#${gradId})`} />
-      <circle cx={50} cy={50} r={16} fill="none" stroke="#0A0A0A" strokeOpacity={0.08} strokeWidth={1} />
+      <circle cx={50} cy={50} r={16} fill="none" stroke="#04070B" strokeOpacity={0.08} strokeWidth={1} />
     </Box>
   );
 }

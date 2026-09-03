@@ -6,19 +6,19 @@ import Button from '@mui/material/Button';
 import type { KgEntity } from '../../types/domain';
 
 const DOMAIN_COLORS: Record<string, string> = {
-  codebase: '#00A3E0',
-  requirements: '#86BC25',
-  architecture: '#6B9A1D',
-  security_compliance: '#C4262E',
-  technical_debt: '#B98900',
-  incidents_bugs: '#C4262E',
-  deployments: '#00A3E0',
-  tests_quality: '#86BC25',
-  team_people: '#54534F',
+  codebase: '#3E6FFA',
+  requirements: '#17B6C4',
+  architecture: '#0E838D',
+  security_compliance: '#D6323B',
+  technical_debt: '#E0A526',
+  incidents_bugs: '#D6323B',
+  deployments: '#3E6FFA',
+  tests_quality: '#17B6C4',
+  team_people: '#56636B',
 };
 
 function colorFor(domain: string): string {
-  return DOMAIN_COLORS[domain] ?? '#7A7A76';
+  return DOMAIN_COLORS[domain] ?? '#6B7680';
 }
 
 interface EntityGraphViewProps {
@@ -168,7 +168,7 @@ export function EntityGraphView({ center, neighbors, onSelect, highlightImpactPa
             opacity={highlightImpactPath ? 0.9 : 0.6}
           />
         ))}
-        <circle cx={cx} cy={cy} r={34} fill="#282728" />
+        <circle cx={cx} cy={cy} r={34} fill="#101820" />
         <text x={cx} y={cy + 4} textAnchor="middle" fontSize="11" fill="#fff" fontWeight={700}>
           {center.name.length > 16 ? `${center.name.slice(0, 14)}…` : center.name}
         </text>
