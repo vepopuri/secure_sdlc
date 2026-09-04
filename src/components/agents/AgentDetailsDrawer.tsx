@@ -19,16 +19,24 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Link from '@mui/material/Link';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Agent, Environment } from '../../types/domain';
-import { RiskBadge, StatusBadge, ActionLevelBadge } from '../common/StatusBadge';
+import { RiskBadge, StatusBadge, ActionLevelBadge, SeverityBadge } from '../common/StatusBadge';
 import { agents as allAgents } from '../../data/agents';
 import { sdlcPhases } from '../../data/phases';
 import { mcpConnectors } from '../../data/mcpConnectors';
 import { agentService } from '../../services';
 import { createLiveRemediationPR, type LiveRemediationResult } from '../../services/liveRemediationService';
+import { runLiveDependencyScan, type LiveScanResult } from '../../services/liveDependencyScanService';
+
+/** GHSA's severity vocabulary (LOW/MODERATE/HIGH/CRITICAL) mapped to this app's own (low/medium/high/critical). */
+function normalizeSeverity(severity: string): string {
+  const lower = severity.toLowerCase();
+  return lower === 'moderate' ? 'medium' : lower;
+}
 
 interface AgentDetailsDrawerProps {
   agent: Agent | null;
@@ -57,6 +65,8 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
   const [liveBusy, setLiveBusy] = useState(false);
   const [liveResult, setLiveResult] = useState<LiveRemediationResult | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [scanBusy, setScanBusy] = useState(false);
+  const [scanResult, setScanResult] = useState<LiveScanResult | null>(null);
 
   if (!agent) return null;
 
@@ -90,6 +100,14 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
     const result = await createLiveRemediationPR();
     setLiveBusy(false);
     setLiveResult(result);
+  }
+
+  async function handleLiveScan() {
+    setScanBusy(true);
+    setScanResult(null);
+    const result = await runLiveDependencyScan();
+    setScanBusy(false);
+    setScanResult(result);
   }
 
   return (
@@ -291,6 +309,72 @@ export function AgentDetailsDrawer({ agent, open, onClose, onChanged, canRunAgen
                 onClick={() => setConfirmOpen(true)}
               >
                 {liveBusy ? 'Opening real pull request…' : 'Open real remediation PR (live)'}
+              </Button>
+            )}
+          </>
+        )}
+
+        {agent.id === 'security_scan_agent' && (
+          <>
+            <Divider sx={{ my: 2 }} />
+            <Alert severity="info" icon={<TravelExploreIcon fontSize="inherit" />} sx={{ mb: 1.5 }}>
+              <strong>Live integration.</strong> This agent's dependency scan is real — it queries
+              the public <strong>OSV.dev</strong> vulnerability database for this app's actual npm
+              production dependencies. No credentials required.
+            </Alert>
+
+            {scanResult?.ok && (
+              <Alert
+                severity={scanResult.findings && scanResult.findings.length > 0 ? 'warning' : 'success'}
+                sx={{ mb: 1.5 }}
+                onClose={() => setScanResult(null)}
+              >
+                {scanResult.findings && scanResult.findings.length > 0
+                  ? `Found ${scanResult.findings.length} known vulnerabilit${scanResult.findings.length === 1 ? 'y' : 'ies'} across ${scanResult.packagesScanned} scanned dependencies.`
+                  : `No known vulnerabilities found in ${scanResult.packagesScanned} scanned dependencies — a real result, not an error.`}
+              </Alert>
+            )}
+            {scanResult && !scanResult.ok && (
+              <Alert severity="error" sx={{ mb: 1.5 }} onClose={() => setScanResult(null)}>
+                {scanResult.error}
+              </Alert>
+            )}
+
+            {scanResult?.ok && scanResult.findings && scanResult.findings.length > 0 && (
+              <List dense disablePadding sx={{ mb: 1.5 }}>
+                {scanResult.findings.map((f, i) => (
+                  <ListItem key={`${f.id}-${i}`} disableGutters sx={{ display: 'block', py: 0.75 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+                      <Typography variant="body2" fontWeight={600}>
+                        {f.package}@{f.version}
+                      </Typography>
+                      <SeverityBadge severity={normalizeSeverity(f.severity)} />
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      {f.references[0] ? (
+                        <Link href={f.references[0]} target="_blank" rel="noopener noreferrer">
+                          {f.id}
+                        </Link>
+                      ) : (
+                        f.id
+                      )}
+                      {' — '}
+                      {f.summary}
+                    </Typography>
+                  </ListItem>
+                ))}
+              </List>
+            )}
+
+            {canRunAgents && (
+              <Button
+                variant="outlined"
+                fullWidth
+                startIcon={<TravelExploreIcon />}
+                disabled={scanBusy}
+                onClick={handleLiveScan}
+              >
+                {scanBusy ? 'Scanning real dependencies…' : 'Run real dependency scan (live)'}
               </Button>
             )}
           </>
