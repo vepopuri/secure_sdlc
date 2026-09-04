@@ -28,7 +28,7 @@ import { PhaseCard } from '../components/phases/PhaseCard';
 import { DemoDataChip } from '../components/common/DemoDataChip';
 import { ConnectorMotif } from '../components/common/ConnectorMotif';
 import { Reveal } from '../components/common/Reveal';
-import { ArchitectureDiagram } from '../components/common/ArchitectureDiagram';
+import { GovernanceJourneyDiagram } from '../components/common/GovernanceJourneyDiagram';
 import { sdlcPhases } from '../data/phases';
 import { agents, CORE_AGENT_COUNT, CROSS_CUTTING_AGENT_COUNT, TOTAL_AGENT_COUNT } from '../data/agents';
 import { sourceConnectors, platformMcpServices } from '../data/mcpConnectors';
@@ -273,21 +273,21 @@ export function OverviewPage() {
         </Box>
       </Reveal>
 
-      {/* Architecture: illustrative, not exhaustive — see Platform Components for the full breakdown */}
+      {/* Governance journey: illustrative, not exhaustive — see Approvals for the real queue */}
       <Reveal>
         <Box sx={{ mb: { xs: 6, md: 10 } }}>
           <Typography variant="overline" color="text.secondary">
-            How it's wired
+            How agents are governed
           </Typography>
           <Typography variant="h2" sx={{ mt: 0.5, mb: 1 }}>
-            One governed path, two real connections
+            Running the agent is never the last step
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 640 }}>
-            A simplified, illustrative view — not every component. Agents never call a source system
-            directly; the Gateway is the one choke point everything else routes through. Two agents
-            are the deliberate exception, wired to real external systems today.
+            A simplified, illustrative view of the loop every agent — mandatory or optional —
+            runs through. Each step's evidence is saved before the next one is even considered,
+            and nothing advances without either an approval or a reviewed, logged exemption.
           </Typography>
-          <ArchitectureDiagram />
+          <GovernanceJourneyDiagram />
         </Box>
       </Reveal>
 
