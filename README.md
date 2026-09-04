@@ -126,13 +126,18 @@ Every controlled or write-capable agent action carries an `ActionLevel` (0–3):
 environments they can act in. The header's profile menu includes a role switcher so you can see the same data
 under different role lenses without a real login system.
 
-## Live integration: Remediation Agent
+## Live integrations
 
-Everywhere else in this app, "Run agent" is simulated. The **Remediation Agent** is the one deliberate exception: its
-details drawer has a separate, clearly-labeled **"Open real remediation PR (live)"** button that calls a real
-Vercel serverless function (`api/remediate.ts`), which calls the real GitHub REST API to open — or reuse, if one is
-already open — an actual draft pull request on `vepopuri/secure_sdlc`. This proves the write-integration pattern the
-rest of the platform describes (agent → governed action → real system) end to end for one concrete case.
+Everywhere else in this app, "Run agent" is simulated. Two agents are the deliberate exceptions, each with a
+separate, clearly-labeled button in its details drawer that calls a real Vercel serverless function instead of the
+mock service layer.
+
+### Remediation Agent — real GitHub write
+
+The **"Open real remediation PR (live)"** button calls `api/remediate.ts`, which calls the real GitHub REST API to
+open — or reuse, if one is already open — an actual draft pull request on `vepopuri/secure_sdlc`. This proves the
+write-integration pattern the rest of the platform describes (agent → governed action → real system) end to end for
+one concrete case.
 
 The PR's content has two tiers, controlled by whether `ANTHROPIC_API_KEY` is set:
 
@@ -155,17 +160,34 @@ from the client; it only accepts a `findingId` checked against a small whitelist
 reuses the same deterministic branch/PR per finding so repeated clicks don't spam new PRs (though each click with
 `ANTHROPIC_API_KEY` set still re-runs the model — there's no response caching).
 
+### Security Scan Agent — real dependency vulnerability check
+
+The **"Run real dependency scan (live)"** button calls `api/scan-dependencies.ts`, which queries the public
+[OSV.dev](https://osv.dev) vulnerability database (Google's Open Source Vulnerability project) for every package
+listed in this app's own `package.json` `dependencies` — the real npm packages this deployment actually ships, not
+mock data. Unlike the Remediation Agent, this needs **no credentials or setup**: OSV.dev's query API is public and
+unauthenticated, so it works the moment the app is deployed.
+
+One honest simplification: the version checked against OSV.dev is `package.json`'s *declared* semver range with the
+leading operator (`^`, `~`, etc.) stripped, not necessarily `package-lock.json`'s exact resolved version — reading a
+lockfile reliably from inside a serverless function is far more fragile than reading the one JSON file every Node
+project already guarantees exists at its own root. A clean scan (no findings) is a genuine, expected result, not an
+error — it's shown as a green success state, not hidden or treated as a failure.
+
+**Setup:** none required. If `DEMO_TRIGGER_SECRET` is already set (see above), this endpoint is gated behind the
+same secret — no separate configuration needed.
+
 ## What is intentionally deferred
 
 This build is the application shell and demo experience, not the production backend. Not implemented, on purpose,
-outside the one live integration described above:
+outside the two live integrations described above:
 
 - Real MCP connector calls, OAuth/connection flows, and live source-system data for every agent other than the
-  Remediation Agent's GitHub write path — everything else is simulated with artificial latency and an occasional
-  simulated failure, clearly labeled "demo mode."
+  Remediation Agent's GitHub write path and the Security Scan Agent's OSV.dev read path — everything else is
+  simulated with artificial latency and an occasional simulated failure, clearly labeled "demo mode."
 - A real Agent Orchestrator / Agent Runtime that actually executes agent logic — "Run agent" appends a synthetic
-  execution record rather than invoking a model, for every agent except the Remediation Agent's live action (and
-  even there, only when `ANTHROPIC_API_KEY` is set — see above).
+  execution record rather than invoking a model, for every agent except the two live actions above (and the
+  Remediation Agent's patch generation, specifically, only when `ANTHROPIC_API_KEY` is set — see above).
 - A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays
   (though see below — they do persist to `localStorage` within a browser).
 - Authentication/SSO — the role switcher is a demo convenience, not a login system.
