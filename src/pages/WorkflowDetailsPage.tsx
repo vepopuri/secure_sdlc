@@ -27,8 +27,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
+import { EvidenceChips } from '../components/common/EvidenceChips';
+import { FlowPipeline } from '../components/common/FlowPipeline';
 import { workflowService } from '../services';
 import { agents } from '../data/agents';
+import { mcpConnectors } from '../data/mcpConnectors';
 import { useAppState } from '../context/AppStateContext';
 import { useStepRunner } from '../hooks/useStepRunner';
 import type { RunStatus, Workflow, WorkflowStepEvent } from '../types/domain';
@@ -51,6 +54,16 @@ const DOT_COLOR: Record<string, 'success' | 'info' | 'error' | 'warning' | 'grey
   awaiting_approval: 'warning',
   blocked: 'error',
 };
+
+/** For a human_approval step, "Completed" is ambiguous — say plainly whether it was approved or is still pending. */
+function StepStatusChip({ step, status }: { step: WorkflowStepEvent; status?: RunStatus }) {
+  if (!status) return <Chip size="small" variant="outlined" label="Pending" />;
+  if (step.kind === 'human_approval') {
+    if (status === 'completed') return <Chip size="small" color="success" label="Approved" />;
+    if (status === 'awaiting_approval') return <Chip size="small" color="warning" label="Pending approval" />;
+  }
+  return <StatusBadge status={status} />;
+}
 
 export function WorkflowDetailsPage() {
   const { workflowId } = useParams();
@@ -109,6 +122,18 @@ export function WorkflowDetailsPage() {
   }
 
   const involvedAgents = workflow.agentIds.map((id) => agents.find((a) => a.id === id)).filter(Boolean);
+
+  // The order agents hand off to each other, grounded in workflow.agentIds — each stage's
+  // subtitle is the actual step that agent performed, not decorative copy.
+  const agentFlowStages = workflow.agentIds.map((id) => {
+    const agent = agents.find((a) => a.id === id);
+    const firstStep = workflow.steps.find((s) => s.agentId === id);
+    return {
+      icon: SmartToyOutlinedIcon,
+      title: agent?.name ?? id,
+      subtitle: firstStep?.label ?? 'Participates in this workflow',
+    };
+  });
 
   // Once a live run has been started this page view, the timeline reflects
   // client-side progression (runIndex) rather than each step's stored
@@ -192,16 +217,23 @@ export function WorkflowDetailsPage() {
         {workflow.evidenceRefs.length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="caption" color="text.secondary" display="block">
-              Evidence
+              Evidence stored (linked where indexed in the Knowledge Graph)
             </Typography>
-            <Stack direction="row" gap={0.5} flexWrap="wrap">
-              {workflow.evidenceRefs.map((e) => (
-                <Chip key={e} size="small" label={e} sx={{ fontFamily: 'monospace' }} />
-              ))}
-            </Stack>
+            <EvidenceChips refs={workflow.evidenceRefs} />
           </Box>
         )}
       </Paper>
+
+      {agentFlowStages.length > 1 && (
+        <>
+          <Typography variant="h3" sx={{ mb: 1 }}>
+            Agent flow
+          </Typography>
+          <Paper sx={{ p: { xs: 1.5, md: 2 }, mb: 3 }}>
+            <FlowPipeline stages={agentFlowStages} />
+          </Paper>
+        </>
+      )}
 
       <Typography variant="h3" sx={{ mb: 1 }}>
         Timeline
@@ -227,11 +259,31 @@ export function WorkflowDetailsPage() {
                     <Typography variant="body2" fontWeight={600}>
                       {step.label}
                     </Typography>
-                    {status ? <StatusBadge status={status} /> : <Chip size="small" variant="outlined" label="Pending" />}
+                    <StepStatusChip step={step} status={status} />
                   </Stack>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
                     {status ? step.detail : 'Not yet reached in this run.'}
                   </Typography>
+                  {status && (step.agentId || step.mcpConnectorId) && (
+                    <Stack direction="row" gap={0.5} flexWrap="wrap">
+                      {step.agentId && (
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          icon={<SmartToyOutlinedIcon fontSize="small" />}
+                          label={agents.find((a) => a.id === step.agentId)?.name ?? step.agentId}
+                        />
+                      )}
+                      {step.mcpConnectorId && (
+                        <Chip
+                          size="small"
+                          variant="outlined"
+                          icon={<HubOutlinedIcon fontSize="small" />}
+                          label={mcpConnectors.find((c) => c.id === step.mcpConnectorId)?.name ?? step.mcpConnectorId}
+                        />
+                      )}
+                    </Stack>
+                  )}
                 </TimelineContent>
               </TimelineItem>
             );
