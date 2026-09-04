@@ -28,6 +28,7 @@ import { PhaseCard } from '../components/phases/PhaseCard';
 import { DemoDataChip } from '../components/common/DemoDataChip';
 import { ConnectorMotif } from '../components/common/ConnectorMotif';
 import { Reveal } from '../components/common/Reveal';
+import { ArchitectureDiagram } from '../components/common/ArchitectureDiagram';
 import { sdlcPhases } from '../data/phases';
 import { agents, CORE_AGENT_COUNT, CROSS_CUTTING_AGENT_COUNT, TOTAL_AGENT_COUNT } from '../data/agents';
 import { sourceConnectors, platformMcpServices } from '../data/mcpConnectors';
@@ -269,6 +270,24 @@ export function OverviewPage() {
               );
             })}
           </Stack>
+        </Box>
+      </Reveal>
+
+      {/* Architecture: illustrative, not exhaustive — see Platform Components for the full breakdown */}
+      <Reveal>
+        <Box sx={{ mb: { xs: 6, md: 10 } }}>
+          <Typography variant="overline" color="text.secondary">
+            How it's wired
+          </Typography>
+          <Typography variant="h2" sx={{ mt: 0.5, mb: 1 }}>
+            One governed path, two real connections
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 640 }}>
+            A simplified, illustrative view — not every component. Agents never call a source system
+            directly; the Gateway is the one choke point everything else routes through. Two agents
+            are the deliberate exception, wired to real external systems today.
+          </Typography>
+          <ArchitectureDiagram />
         </Box>
       </Reveal>
 

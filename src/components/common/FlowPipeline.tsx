@@ -17,9 +17,13 @@ interface FlowPipelineProps {
   stages: FlowStage[];
   /** An optional side interaction (e.g. the Knowledge Graph) rendered as its own smaller row below the main pipeline. */
   branch?: { label: string; stages: FlowStage[] };
+  /** 'vertical' stacks stages top-to-bottom at every breakpoint (not just mobile) — used for side-by-side comparison diagrams. Defaults to the original responsive row/column behavior. */
+  orientation?: 'horizontal' | 'vertical';
+  /** Dims the stage cards — for illustrating a simulated/inactive path alongside a highlighted real one. */
+  muted?: boolean;
 }
 
-function StageCard({ stage }: { stage: FlowStage }) {
+function StageCard({ stage, muted }: { stage: FlowStage; muted?: boolean }) {
   const Icon = stage.icon;
   return (
     <Paper
@@ -30,6 +34,7 @@ function StageCard({ stage }: { stage: FlowStage }) {
         flex: '1 1 190px',
         borderColor: 'divider',
         borderRadius: 3,
+        opacity: muted ? 0.75 : 1,
       }}
     >
       <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.75 }}>
@@ -41,8 +46,8 @@ function StageCard({ stage }: { stage: FlowStage }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bgcolor: 'rgba(23,182,196,0.12)',
-            color: 'primary.main',
+            bgcolor: muted ? 'action.selected' : 'rgba(23,182,196,0.12)',
+            color: muted ? 'text.secondary' : 'primary.main',
             flexShrink: 0,
           }}
         >
@@ -75,17 +80,16 @@ function StageCard({ stage }: { stage: FlowStage }) {
   );
 }
 
-function PipelineRow({ stages }: { stages: FlowStage[] }) {
+function PipelineRow({ stages, orientation = 'horizontal', muted }: { stages: FlowStage[]; orientation?: 'horizontal' | 'vertical'; muted?: boolean }) {
+  const rowDirection = orientation === 'vertical' ? 'column' : { xs: 'column' as const, md: 'row' as const };
+  const arrowTransform = orientation === 'vertical' ? 'rotate(90deg)' : { xs: 'rotate(90deg)', md: 'none' };
   return (
-    <Stack direction={{ xs: 'column', md: 'row' }} alignItems={{ xs: 'stretch', md: 'center' }} gap={1.5}>
+    <Stack direction={rowDirection} alignItems={orientation === 'vertical' ? 'stretch' : { xs: 'stretch', md: 'center' }} gap={1.5}>
       {stages.map((stage, i) => (
-        <Stack key={i} direction={{ xs: 'column', md: 'row' }} alignItems="center" gap={1.5} sx={{ flex: '1 1 0' }}>
-          <StageCard stage={stage} />
+        <Stack key={i} direction={rowDirection} alignItems="center" gap={1.5} sx={{ flex: '1 1 0' }}>
+          <StageCard stage={stage} muted={muted} />
           {i < stages.length - 1 && (
-            <ArrowForwardIcon
-              fontSize="small"
-              sx={{ color: 'text.disabled', transform: { xs: 'rotate(90deg)', md: 'none' }, flexShrink: 0 }}
-            />
+            <ArrowForwardIcon fontSize="small" sx={{ color: 'text.disabled', transform: arrowTransform, flexShrink: 0 }} />
           )}
         </Stack>
       ))}
@@ -94,16 +98,16 @@ function PipelineRow({ stages }: { stages: FlowStage[] }) {
 }
 
 /** A hand-rolled, fixed pipeline diagram — deliberately linear (no auto-layout graph library) since the underlying data (trigger → agent → gateway → connector → system) is genuinely a straight line, with at most one side branch. */
-export function FlowPipeline({ stages, branch }: FlowPipelineProps) {
+export function FlowPipeline({ stages, branch, orientation = 'horizontal', muted }: FlowPipelineProps) {
   return (
     <Box>
-      <PipelineRow stages={stages} />
+      <PipelineRow stages={stages} orientation={orientation} muted={muted} />
       {branch && (
         <Box sx={{ mt: 2.5, pt: 2.5, borderTop: '1px dashed', borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
             {branch.label}
           </Typography>
-          <PipelineRow stages={branch.stages} />
+          <PipelineRow stages={branch.stages} orientation={orientation} muted={muted} />
         </Box>
       )}
     </Box>
