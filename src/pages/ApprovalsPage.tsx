@@ -21,6 +21,7 @@ import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { ActionLevelBadge, RiskBadge, StatusBadge } from '../components/common/StatusBadge';
+import { EvidenceChips } from '../components/common/EvidenceChips';
 import { approvalService } from '../services';
 import { agents } from '../data/agents';
 import { projects } from '../data/orgs';
@@ -191,13 +192,11 @@ export function ApprovalsPage() {
                 <Typography variant="body2">{detailsItem.proposedChange}</Typography>
                 <Box>
                   <Typography variant="caption" color="text.secondary">Evidence</Typography>
-                  <Stack direction="row" gap={0.5} flexWrap="wrap">
-                    {detailsItem.evidenceRefs.length === 0 ? (
-                      <Typography variant="body2">None attached</Typography>
-                    ) : (
-                      detailsItem.evidenceRefs.map((e) => <Chip key={e} size="small" label={e} sx={{ fontFamily: 'monospace' }} />)
-                    )}
-                  </Stack>
+                  {detailsItem.evidenceRefs.length === 0 ? (
+                    <Typography variant="body2">None attached</Typography>
+                  ) : (
+                    <EvidenceChips refs={detailsItem.evidenceRefs} />
+                  )}
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">Requested at</Typography>

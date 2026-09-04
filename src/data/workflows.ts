@@ -23,7 +23,7 @@ export const workflows: Workflow[] = [
     steps: steps([
       { label: 'Story intake read', kind: 'mcp_call', mcpConnectorId: 'jira_linear_mcp', detail: 'Requirements Agent read new story from Jira / Linear MCP.', status: 'completed', timestamp: daysAgo(3, 4) },
       { label: 'Requirements drafted', kind: 'agent_handoff', agentId: 'requirements_agent', detail: 'Drafted acceptance criteria, handed off to Architecture Agent.', status: 'completed', timestamp: daysAgo(3, 3.7) },
-      { label: 'Architecture context read', kind: 'kg_read', detail: 'Architecture Agent read existing architecture entities from the Knowledge Graph.', status: 'completed', timestamp: daysAgo(3, 3.5) },
+      { label: 'Architecture context read', kind: 'kg_read', agentId: 'architecture_agent', detail: 'Architecture Agent read existing architecture entities from the Knowledge Graph.', status: 'completed', timestamp: daysAgo(3, 3.5) },
       { label: 'Dependency check', kind: 'agent_handoff', agentId: 'dependency_agent', detail: 'Dependency Agent traced downstream services affected by the change.', status: 'completed', timestamp: daysAgo(3, 3.2) },
       { label: 'ADR drafted', kind: 'output', detail: 'ADR-014 drafted and posted to Confluence for review.', status: 'completed', timestamp: daysAgo(3, 2.9) },
       { label: 'Human approval', kind: 'human_approval', detail: 'Marcus Ito approved the ADR.', status: 'completed', timestamp: daysAgo(3, 1) },
@@ -45,7 +45,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-3c88e2',
     evidenceRefs: [],
     steps: steps([
-      { label: 'PR diff read', kind: 'mcp_call', mcpConnectorId: 'github_gitlab_mcp', detail: 'Code Review Agent read the pull request diff.', status: 'completed', timestamp: daysAgo(2, 5) },
+      { label: 'PR diff read', kind: 'mcp_call', agentId: 'code_review_agent', mcpConnectorId: 'github_gitlab_mcp', detail: 'Code Review Agent read the pull request diff.', status: 'completed', timestamp: daysAgo(2, 5) },
       { label: 'Static analysis correlated', kind: 'mcp_call', mcpConnectorId: 'sonarqube_codeclimate_mcp', detail: 'Cross-referenced SonarQube findings for changed files.', status: 'completed', timestamp: daysAgo(2, 4.8) },
       { label: 'Risk history checked', kind: 'kg_read', detail: 'Read technical-debt and bug-recurrence history for the changed module.', status: 'completed', timestamp: daysAgo(2, 4.6) },
       { label: 'Coverage gap check', kind: 'agent_handoff', agentId: 'test_generation_agent', detail: 'Test Generation Agent flagged missing coverage for one changed branch.', status: 'completed', timestamp: daysAgo(2, 4.3) },
@@ -67,7 +67,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-91af6d',
     evidenceRefs: ['snyk_finding_88213.json'],
     steps: steps([
-      { label: 'Vulnerability scan run', kind: 'mcp_call', mcpConnectorId: 'snyk_semgrep_mcp', detail: 'Scheduled scan surfaced CVE-2024-11xx in the authentication module.', status: 'completed', timestamp: daysAgo(1, 6) },
+      { label: 'Vulnerability scan run', kind: 'mcp_call', agentId: 'security_scan_agent', mcpConnectorId: 'snyk_semgrep_mcp', detail: 'Scheduled scan surfaced CVE-2024-11xx in the authentication module.', status: 'completed', timestamp: daysAgo(1, 6) },
       { label: 'Finding written to graph', kind: 'kg_write', detail: 'Finding recorded against the Authentication Module entity.', status: 'completed', timestamp: daysAgo(1, 5.8) },
       { label: 'Patch drafted', kind: 'agent_handoff', agentId: 'remediation_agent', detail: 'Remediation Agent drafted PR #1442 with a fix and regression test.', status: 'completed', timestamp: daysAgo(1, 5) },
       { label: 'Policy evaluation', kind: 'policy_decision', detail: 'Policy Engine flagged the change as Level 2 (controlled change); approval required.', status: 'completed', timestamp: daysAgo(1, 4.8) },
@@ -89,7 +89,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-5b12cc',
     evidenceRefs: [],
     steps: steps([
-      { label: 'Exploitability enrichment', kind: 'mcp_call', mcpConnectorId: 'threat_intelligence_mcp', detail: 'CVE-2024-22xx marked as actively exploited in the wild.', status: 'completed', timestamp: minutesAgo(38) },
+      { label: 'Exploitability enrichment', kind: 'mcp_call', agentId: 'threat_intel_vuln_prioritization_agent', mcpConnectorId: 'threat_intelligence_mcp', detail: 'CVE-2024-22xx marked as actively exploited in the wild.', status: 'completed', timestamp: minutesAgo(38) },
       { label: 'Backlog re-prioritized', kind: 'kg_write', detail: 'Updated finding priority in the Knowledge Graph.', status: 'completed', timestamp: minutesAgo(34) },
       { label: 'Patch drafting in progress', kind: 'agent_handoff', agentId: 'remediation_agent', detail: 'Remediation Agent is drafting a fix for the session-fixation weakness.', status: 'running', timestamp: minutesAgo(10) },
     ], 'wf4'),
@@ -109,7 +109,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-c4471e',
     evidenceRefs: ['incident_0417_timeline.json'],
     steps: steps([
-      { label: 'Anomaly detected', kind: 'mcp_call', mcpConnectorId: 'observability_platform_mcp', detail: 'Elevated login failure rate detected.', status: 'completed', timestamp: daysAgo(6, 8) },
+      { label: 'Anomaly detected', kind: 'mcp_call', agentId: 'observability_agent', mcpConnectorId: 'observability_platform_mcp', detail: 'Elevated login failure rate detected.', status: 'completed', timestamp: daysAgo(6, 8) },
       { label: 'Timeline assembled', kind: 'agent_handoff', agentId: 'incident_response_forensics_agent', detail: 'Correlated deploy events, logs, and alerts into a timeline.', status: 'completed', timestamp: daysAgo(6, 7.5) },
       { label: 'Debt linkage found', kind: 'kg_read', detail: 'Matched root cause to a 6-sprint-old technical-debt item on session-store scaling.', status: 'completed', timestamp: daysAgo(6, 7) },
       { label: 'Evidence attached', kind: 'output', detail: 'Root-cause package attached to the incident record.', status: 'completed', timestamp: daysAgo(6, 6.8) },
@@ -130,8 +130,8 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-1d99b0',
     evidenceRefs: [],
     steps: steps([
-      { label: 'Dependency graph traversed', kind: 'kg_read', detail: 'Traced services depending on the changed component.', status: 'completed', timestamp: daysAgo(3, 2) },
-      { label: 'Infrastructure diff checked', kind: 'mcp_call', mcpConnectorId: 'iac_mcp', detail: 'Confirmed no infrastructure drift ahead of deploy.', status: 'completed', timestamp: daysAgo(3, 1.8) },
+      { label: 'Dependency graph traversed', kind: 'kg_read', agentId: 'dependency_agent', detail: 'Traced services depending on the changed component.', status: 'completed', timestamp: daysAgo(3, 2) },
+      { label: 'Infrastructure diff checked', kind: 'mcp_call', agentId: 'iac_agent', mcpConnectorId: 'iac_mcp', detail: 'Confirmed no infrastructure drift ahead of deploy.', status: 'completed', timestamp: daysAgo(3, 1.8) },
       { label: 'Alert thresholds reviewed', kind: 'agent_handoff', agentId: 'observability_agent', detail: 'Confirmed alert coverage for the affected service.', status: 'completed', timestamp: daysAgo(3, 1.5) },
     ], 'wf6'),
   },
@@ -150,7 +150,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-8890ab',
     evidenceRefs: [],
     steps: steps([
-      { label: 'Debt registry scanned', kind: 'mcp_call', mcpConnectorId: 'sonarqube_codeclimate_mcp', detail: 'Refreshed maintainability signal for tracked modules.', status: 'completed', timestamp: daysAgo(5, 1) },
+      { label: 'Debt registry scanned', kind: 'mcp_call', agentId: 'tech_debt_agent', mcpConnectorId: 'sonarqube_codeclimate_mcp', detail: 'Refreshed maintainability signal for tracked modules.', status: 'completed', timestamp: daysAgo(5, 1) },
       { label: 'Priority heatmap updated', kind: 'kg_write', detail: 'Updated priority scores in the Knowledge Graph.', status: 'completed', timestamp: daysAgo(5, 0.5) },
     ], 'wf7'),
   },
@@ -169,7 +169,7 @@ export const workflows: Workflow[] = [
     correlationId: 'corr-4402fa',
     evidenceRefs: [],
     steps: steps([
-      { label: 'Run scheduled', kind: 'output', detail: 'Next evidence collection run scheduled for the first of next month.', status: 'completed', timestamp: daysAgo(0) },
+      { label: 'Run scheduled', kind: 'output', agentId: 'compliance_agent', detail: 'Next evidence collection run scheduled for the first of next month.', status: 'completed', timestamp: daysAgo(0) },
     ], 'wf8'),
   },
 ];

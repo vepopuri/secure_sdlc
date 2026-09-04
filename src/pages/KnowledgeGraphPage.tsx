@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
@@ -22,6 +22,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/Search';
 import ShareIcon from '@mui/icons-material/Share';
 import AddIcon from '@mui/icons-material/Add';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { EntityDrawer } from '../components/kg/EntityDrawer';
@@ -39,6 +40,8 @@ const TIME_RANGES = [
 ];
 
 export function KnowledgeGraphPage() {
+  const [searchParams] = useSearchParams();
+  const deepLinkHandled = useRef(false);
   const [search, setSearch] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<KgDomain[]>([]);
   const [projectId, setProjectId] = useState('all');
@@ -114,6 +117,18 @@ export function KnowledgeGraphPage() {
     setDrawerMode('view');
     setDrawerOpen(true);
   }
+
+  // Deep link support (e.g. "Open in Knowledge Graph" from a workflow's stored evidence) —
+  // opens the entity named by ?entity= once the dataset has loaded, and only once, so it
+  // doesn't fight with the user's own subsequent clicks.
+  useEffect(() => {
+    if (deepLinkHandled.current || allEntities.length === 0) return;
+    const entityId = searchParams.get('entity');
+    if (entityId && allEntities.some((e) => e.id === entityId)) {
+      openEntity(entityId);
+    }
+    deepLinkHandled.current = true;
+  }, [allEntities, searchParams]);
 
   function openNewEntity() {
     setSelectedId(null);
