@@ -87,22 +87,27 @@ Every page talks to data exclusively through `src/services/*Service.ts` (`agentS
 
 ## How new agents are added
 
-Add one object to the `agents` array in `src/data/agents.ts` via `buildAgent({...})`, filling in every field on the
-`Agent` type (purpose, responsibilities, inputs/outputs, required MCP connectors, KG entities read/written, risk
-level, approval level, production-impact flags, etc.). The Agents catalog, SDLC Phases tab, and Get Started wizard
-all read from this single array — no other file needs to change. If the agent is cross-cutting rather than
-phase-owned, set `category: 'cross_cutting'` and list every phase it touches in `phaseIds`.
+Each agent is its own file under `src/data/agents/<agent_id>.ts`, exporting a single `AgentSeed` object (every field
+on the `Agent` type except the ones `index.ts` derives: execution history, last execution, confidence score). To add
+one: create a new file there via `buildAgent`-compatible shape, filling in purpose, responsibilities, inputs/outputs,
+required MCP connectors, KG entities read/written, risk level, approval level, production-impact flags, etc., then
+import and list it in the `seeds` array in `src/data/agents/index.ts`. The Agents catalog, SDLC Phases tab, and Get
+Started wizard all read from that index's exported `agents` array — no other file needs to change. If the agent is
+cross-cutting rather than phase-owned, set `category: CROSS` (from `./agentSeed`) and list every phase it touches in
+`phaseIds`.
 
 ## How new MCP connectors are added
 
-Add one object to the relevant category array in `src/data/mcpConnectors.ts` (e.g. `codeDevelopment`,
-`securityIdentity`). `agentIdsUsing` is derived automatically from which agents list the connector in their
-`requiredMcpConnectorIds` — you don't set it by hand. Platform services (as opposed to source connectors) go in the
-`platformServices` array and get `isPlatformService: true` plus a `capabilities` list.
+Each connector is its own file under `src/data/mcpConnectors/<connector_id>.ts`, exporting a single `ConnectorSeed`
+object. Add a new file, then import and list it in the `seeds` array in `src/data/mcpConnectors/index.ts`.
+`agentIdsUsing` is derived automatically from which agents list the connector in their `requiredMcpConnectorIds` —
+you don't set it by hand. Platform services (as opposed to source connectors) get `isPlatformService: true` plus a
+`capabilities` list.
 
 ## How Knowledge Graph entities are represented
 
-Each `KgEntity` (`src/data/knowledgeGraph.ts`) belongs to exactly one of the 19 `KgDomain`s and carries its own
+Each entity is its own file under `src/data/knowledgeGraph/<entity_id>.ts`, exporting a single `KgEntity` object,
+listed in `src/data/knowledgeGraph/index.ts`. Each `KgEntity` belongs to exactly one of the 19 `KgDomain`s and carries its own
 `relationships: KgRelationship[]` — a typed edge list pointing at other entities by id, each tagged with a
 relationship type and the target's domain. The Knowledge Graph tab renders a simple list view of an entity's
 relationships by default, and an optional lightweight SVG graph view (`EntityGraphView`) only when the user asks for

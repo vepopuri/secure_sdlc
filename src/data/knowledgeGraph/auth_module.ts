@@ -1,0 +1,36 @@
+import type { KgEntity } from '../../types/domain';
+import { daysAgo } from '../mockHelpers';
+
+export const authModuleEntity: KgEntity = {
+  id: 'auth_module',
+  name: 'Authentication Module',
+  domain: 'codebase',
+  entityType: 'Module',
+  summary: 'Handles login, session issuance, and token rotation for the Checkout Service.',
+  sourceSystem: 'GitHub / GitLab MCP',
+  owner: 'Identity and Access Team',
+  confidenceScore: 0.94,
+  lastUpdated: daysAgo(1),
+  projectId: 'proj_checkout_service',
+  relationships: [
+    { id: 'rel_1', type: 'implements', targetEntityId: 'story_auth_mfa', targetEntityName: 'Add MFA to checkout login', targetDomain: 'requirements' },
+    { id: 'rel_2', type: 'implements', targetEntityId: 'story_auth_sso', targetEntityName: 'Support SSO for enterprise customers', targetDomain: 'requirements' },
+    { id: 'rel_3', type: 'governed_by', targetEntityId: 'adr_auth_token_rotation', targetEntityName: 'ADR-014: JWT rotation strategy', targetDomain: 'architecture' },
+    { id: 'rel_4', type: 'affected_by', targetEntityId: 'cve_auth_2024_1111', targetEntityName: 'CVE-2024-11xx: Insecure token refresh', targetDomain: 'security_compliance' },
+    { id: 'rel_5', type: 'affected_by', targetEntityId: 'cve_auth_2024_2222', targetEntityName: 'CVE-2024-22xx: Weak session fixation protection', targetDomain: 'security_compliance' },
+    { id: 'rel_6', type: 'has_debt', targetEntityId: 'debt_auth_legacy_hashing', targetEntityName: 'Legacy password hashing scheme', targetDomain: 'technical_debt' },
+    { id: 'rel_7', type: 'has_debt', targetEntityId: 'debt_auth_session_store', targetEntityName: 'Session store not horizontally scalable', targetDomain: 'technical_debt' },
+    { id: 'rel_8', type: 'has_debt', targetEntityId: 'debt_auth_rate_limit', targetEntityName: 'Missing per-account rate limiting', targetDomain: 'technical_debt' },
+    { id: 'rel_9', type: 'has_debt', targetEntityId: 'debt_auth_test_gaps', targetEntityName: 'Incomplete negative-path test coverage', targetDomain: 'technical_debt' },
+    { id: 'rel_10', type: 'changed_by', targetEntityId: 'pr_auth_token_rotation', targetEntityName: 'PR #1442: Rotate refresh tokens on reuse', targetDomain: 'codebase' },
+    { id: 'rel_11', type: 'changed_by', targetEntityId: 'pr_auth_mfa_enroll', targetEntityName: 'PR #1458: MFA enrollment flow', targetDomain: 'codebase' },
+    { id: 'rel_12', type: 'covered_by', targetEntityId: 'coverage_auth_module', targetEntityName: 'Auth module coverage report', targetDomain: 'tests_quality' },
+    { id: 'rel_13', type: 'impacted_by', targetEntityId: 'incident_auth_outage_0417', targetEntityName: 'INC-0417: Elevated login failures', targetDomain: 'incidents_bugs' },
+    { id: 'rel_14', type: 'deployed_to', targetEntityId: 'deploy_checkout_prod_v482', targetEntityName: 'checkout-service v4.8.2 (production)', targetDomain: 'deployments' },
+    { id: 'rel_15', type: 'deployed_to', targetEntityId: 'deploy_auth_staging_v112', targetEntityName: 'auth-service v1.1.2 (staging)', targetDomain: 'deployments' },
+    { id: 'rel_16', type: 'owned_by', targetEntityId: 'team_identity_entity', targetEntityName: 'Identity and Access Team', targetDomain: 'team_people' },
+  ],
+  evidenceRefs: ['sast_scan_2026_08_20.json', 'pen_test_summary_q2.pdf'],
+  provenance: 'Derived from GitHub repo structure, Snyk findings, and Jira story links; last reconciled by the Knowledge Graph MCP Server.',
+  relatedAgentActivity: ['security_scan_agent last read this entity 2 hours ago', 'remediation_agent proposed a patch referencing this entity 1 day ago'],
+};
