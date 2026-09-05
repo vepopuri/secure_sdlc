@@ -7,6 +7,7 @@ import { AgentsPage } from './pages/AgentsPage';
 import { AgentDetailsPage } from './pages/AgentDetailsPage';
 import { AgentWorkflowPage } from './pages/AgentWorkflowPage';
 import { McpConnectionsPage } from './pages/McpConnectionsPage';
+import { ConnectorDetailsPage } from './pages/ConnectorDetailsPage';
 import { ConnectorWorkflowPage } from './pages/ConnectorWorkflowPage';
 import { KnowledgeGraphPage } from './pages/KnowledgeGraphPage';
 import { PlatformComponentsPage } from './pages/PlatformComponentsPage';
@@ -28,6 +29,7 @@ function App() {
         <Route path="/agents/:agentId" element={<AgentDetailsPage />} />
         <Route path="/agents/:agentId/workflow" element={<AgentWorkflowPage />} />
         <Route path="/mcp" element={<McpConnectionsPage />} />
+        <Route path="/mcp/:connectorId" element={<ConnectorDetailsPage />} />
         <Route path="/mcp/:connectorId/workflow" element={<ConnectorWorkflowPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
         <Route path="/components" element={<PlatformComponentsPage />} />
