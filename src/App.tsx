@@ -10,6 +10,7 @@ import { McpConnectionsPage } from './pages/McpConnectionsPage';
 import { ConnectorDetailsPage } from './pages/ConnectorDetailsPage';
 import { ConnectorWorkflowPage } from './pages/ConnectorWorkflowPage';
 import { KnowledgeGraphPage } from './pages/KnowledgeGraphPage';
+import { KgEntityDetailsPage } from './pages/KgEntityDetailsPage';
 import { PlatformComponentsPage } from './pages/PlatformComponentsPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
 import { WorkflowDetailsPage } from './pages/WorkflowDetailsPage';
@@ -32,6 +33,7 @@ function App() {
         <Route path="/mcp/:connectorId" element={<ConnectorDetailsPage />} />
         <Route path="/mcp/:connectorId/workflow" element={<ConnectorWorkflowPage />} />
         <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
+        <Route path="/knowledge-graph/:entityId" element={<KgEntityDetailsPage />} />
         <Route path="/components" element={<PlatformComponentsPage />} />
         <Route path="/workflows" element={<WorkflowsPage />} />
         <Route path="/workflows/:workflowId" element={<WorkflowDetailsPage />} />

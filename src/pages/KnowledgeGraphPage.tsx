@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Grid from '@mui/material/Grid';
@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
+import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import Alert from '@mui/material/Alert';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -22,10 +23,10 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import SearchIcon from '@mui/icons-material/Search';
 import ShareIcon from '@mui/icons-material/Share';
 import AddIcon from '@mui/icons-material/Add';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
-import { EntityDrawer } from '../components/kg/EntityDrawer';
+import { NewEntityDialog } from '../components/kg/NewEntityDialog';
 import { EntityGraphView } from '../components/kg/EntityGraphView';
 import { KG_DOMAINS } from '../data/knowledgeGraph';
 import { projects } from '../data/orgs';
@@ -40,16 +41,14 @@ const TIME_RANGES = [
 ];
 
 export function KnowledgeGraphPage() {
-  const [searchParams] = useSearchParams();
-  const deepLinkHandled = useRef(false);
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<KgDomain[]>([]);
   const [projectId, setProjectId] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
   const [relationshipType, setRelationshipType] = useState('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerMode, setDrawerMode] = useState<'view' | 'create'>('view');
+  const [newEntityOpen, setNewEntityOpen] = useState(false);
   const [graphView, setGraphView] = useState(false);
   const [impactHighlighted, setImpactHighlighted] = useState(false);
 
@@ -112,38 +111,15 @@ export function KnowledgeGraphPage() {
     setSelectedDomains((prev) => (prev.includes(domain) ? prev.filter((d) => d !== domain) : [...prev, domain]));
   }
 
+  // Selects an entity to recenter the neighborhood/graph panel below — not the same
+  // as viewing its full detail page (navigate to /knowledge-graph/:id for that).
   function openEntity(id: string) {
     setSelectedId(id);
-    setDrawerMode('view');
-    setDrawerOpen(true);
   }
 
-  // Deep link support (e.g. "Open in Knowledge Graph" from a workflow's stored evidence) —
-  // opens the entity named by ?entity= once the dataset has loaded, and only once, so it
-  // doesn't fight with the user's own subsequent clicks.
-  useEffect(() => {
-    if (deepLinkHandled.current || allEntities.length === 0) return;
-    const entityId = searchParams.get('entity');
-    if (entityId && allEntities.some((e) => e.id === entityId)) {
-      openEntity(entityId);
-    }
-    deepLinkHandled.current = true;
-  }, [allEntities, searchParams]);
-
-  function openNewEntity() {
-    setSelectedId(null);
-    setDrawerMode('create');
-    setDrawerOpen(true);
-  }
-
-  // Refetches the full entity list (rather than patching one entity locally)
-  // so that reciprocal relationships written onto a *different* entity by
-  // addRelationship are picked up too, not just the entity being edited.
-  function handleEntityChanged(entityId: string) {
-    knowledgeGraphService.search({}).then((result) => {
-      setAllEntities(result);
-      setSelectedId(entityId);
-    });
+  function handleEntityCreated(entityId: string) {
+    setNewEntityOpen(false);
+    navigate(`/knowledge-graph/${entityId}`);
   }
 
   return (
@@ -228,7 +204,7 @@ export function KnowledgeGraphPage() {
           {results.length} entities
         </Typography>
         <Stack direction="row" gap={1}>
-          <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={openNewEntity}>
+          <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => setNewEntityOpen(true)}>
             New entity
           </Button>
           <Button
@@ -255,7 +231,7 @@ export function KnowledgeGraphPage() {
           {results.map((entity) => (
             <Grid key={entity.id} size={{ xs: 12, sm: 6, lg: 4 }}>
               <Card variant={selectedId === entity.id ? 'elevation' : 'outlined'} sx={selectedId === entity.id ? { borderColor: 'primary.main', borderWidth: 2, border: '2px solid', boxShadow: 'none' } : undefined}>
-                <CardActionArea onClick={() => openEntity(entity.id)} sx={{ p: 1.5 }}>
+                <CardActionArea onClick={() => openEntity(entity.id)} sx={{ p: 1.5, pb: 0.5 }}>
                   <CardContent sx={{ p: '4px !important' }}>
                     <Stack direction="row" justifyContent="space-between">
                       <Typography variant="subtitle2">{entity.name}</Typography>
@@ -269,6 +245,11 @@ export function KnowledgeGraphPage() {
                     </Typography>
                   </CardContent>
                 </CardActionArea>
+                <CardActions sx={{ px: 1.5, pb: 1, pt: 0 }}>
+                  <Button size="small" onClick={() => navigate(`/knowledge-graph/${entity.id}`)}>
+                    View details
+                  </Button>
+                </CardActions>
               </Card>
             </Grid>
           ))}
@@ -277,8 +258,13 @@ export function KnowledgeGraphPage() {
 
       {neighborhood && (
         <Paper sx={{ p: 2.5 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-            <Typography variant="h3">Relationships for {neighborhood.center.name}</Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 1.5 }}>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Typography variant="h3">Relationships for {neighborhood.center.name}</Typography>
+              <Button size="small" onClick={() => navigate(`/knowledge-graph/${neighborhood.center.id}`)}>
+                View details
+              </Button>
+            </Stack>
             <ToggleButtonGroup size="small" exclusive value={graphView ? 'graph' : 'list'} onChange={(_, v) => v && setGraphView(v === 'graph')}>
               <ToggleButton value="list">Simple list</ToggleButton>
               <ToggleButton value="graph">Graph view</ToggleButton>
@@ -308,15 +294,7 @@ export function KnowledgeGraphPage() {
         </Paper>
       )}
 
-      <EntityDrawer
-        entity={selectedEntity ?? null}
-        mode={drawerMode}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onSelectRelated={openEntity}
-        onChanged={handleEntityChanged}
-        allEntities={allEntities}
-      />
+      <NewEntityDialog open={newEntityOpen} onClose={() => setNewEntityOpen(false)} onCreated={handleEntityCreated} />
     </Box>
   );
 }
