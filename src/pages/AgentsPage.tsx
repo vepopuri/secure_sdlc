@@ -17,10 +17,10 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 import SearchIcon from '@mui/icons-material/Search';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { AgentCard } from '../components/agents/AgentCard';
-import { AgentDetailsDrawer } from '../components/agents/AgentDetailsDrawer';
 import { agentService, type AgentFilters } from '../services';
 import { sdlcPhases } from '../data/phases';
 import { mcpConnectors } from '../data/mcpConnectors';
@@ -30,6 +30,7 @@ import type { Agent } from '../types/domain';
 type TriState = 'any' | 'yes' | 'no';
 
 export function AgentsPage() {
+  const navigate = useNavigate();
   const { role, projectId, environment } = useAppState();
   const [search, setSearch] = useState('');
   const [phaseId, setPhaseId] = useState<string>('all');
@@ -43,7 +44,6 @@ export function AgentsPage() {
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Agent | null>(null);
 
   const filters: AgentFilters = useMemo(
     () => ({
@@ -74,14 +74,9 @@ export function AgentsPage() {
     };
   }, [filters]);
 
-  function handleAgentChanged(updated: Agent) {
-    setAgents((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-    setSelected(updated);
-  }
-
   async function handleRun(agent: Agent) {
     const updated = await agentService.run(agent.id, { projectId, environment });
-    if (updated) handleAgentChanged(updated);
+    if (updated) setAgents((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
   }
 
   const activeFilterChips: { key: string; label: string; clear: () => void }[] = [];
@@ -227,20 +222,11 @@ export function AgentsPage() {
         <Grid container spacing={2}>
           {agents.map((agent) => (
             <Grid key={agent.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <AgentCard agent={agent} onViewDetails={setSelected} onRun={role.canRunAgents ? handleRun : undefined} />
+              <AgentCard agent={agent} onViewDetails={(a) => navigate(`/agents/${a.id}`)} onRun={role.canRunAgents ? handleRun : undefined} />
             </Grid>
           ))}
         </Grid>
       )}
-
-      <AgentDetailsDrawer
-        agent={selected}
-        open={Boolean(selected)}
-        onClose={() => setSelected(null)}
-        onChanged={handleAgentChanged}
-        canRunAgents={role.canRunAgents}
-        context={{ projectId, environment }}
-      />
     </Box>
   );
 }
