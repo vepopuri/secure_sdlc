@@ -8,20 +8,16 @@ import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Alert from '@mui/material/Alert';
 import Paper from '@mui/material/Paper';
 import LinearProgress from '@mui/material/LinearProgress';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { ActionLevelBadge, RiskBadge, StatusBadge } from '../components/common/StatusBadge';
-import { EvidenceChips } from '../components/common/EvidenceChips';
 import { approvalService } from '../services';
 import { agents } from '../data/agents';
 import { projects } from '../data/orgs';
@@ -36,11 +32,11 @@ const LEVEL_LEGEND = [
 ];
 
 export function ApprovalsPage() {
+  const navigate = useNavigate();
   const { role } = useAppState();
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ApprovalItem['status'] | 'all'>('pending');
-  const [detailsItem, setDetailsItem] = useState<ApprovalItem | null>(null);
 
   useEffect(() => {
     approvalService.list().then((result) => {
@@ -159,7 +155,7 @@ export function ApprovalsPage() {
                     )}
                   </CardContent>
                   <CardActions sx={{ px: 2, pb: 2 }}>
-                    <Button size="small" onClick={() => setDetailsItem(item)}>
+                    <Button size="small" onClick={() => navigate(`/approvals/${item.id}`)}>
                       View details
                     </Button>
                     {canDecide && (
@@ -182,34 +178,6 @@ export function ApprovalsPage() {
           })}
         </Grid>
       )}
-
-      <Dialog open={Boolean(detailsItem)} onClose={() => setDetailsItem(null)} maxWidth="sm" fullWidth>
-        {detailsItem && (
-          <>
-            <DialogTitle>{detailsItem.requestedAction}</DialogTitle>
-            <DialogContent dividers>
-              <Stack gap={1.5}>
-                <Typography variant="body2">{detailsItem.proposedChange}</Typography>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Evidence</Typography>
-                  {detailsItem.evidenceRefs.length === 0 ? (
-                    <Typography variant="body2">None attached</Typography>
-                  ) : (
-                    <EvidenceChips refs={detailsItem.evidenceRefs} />
-                  )}
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Requested at</Typography>
-                  <Typography variant="body2">{new Date(detailsItem.createdAt).toLocaleString()}</Typography>
-                </Box>
-              </Stack>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setDetailsItem(null)}>Close</Button>
-            </DialogActions>
-          </>
-        )}
-      </Dialog>
     </Box>
   );
 }
