@@ -10,11 +10,11 @@ import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import HubIcon from '@mui/icons-material/Hub';
 import SearchIcon from '@mui/icons-material/Search';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { ConnectorCard } from '../components/mcp/ConnectorCard';
-import { ConnectorDetailsDrawer } from '../components/mcp/ConnectorDetailsDrawer';
 import { sourceConnectors, platformMcpServices, MCP_CATEGORY_LABELS } from '../data/mcpConnectors';
-import type { McpCategory, McpConnector } from '../types/domain';
+import type { McpCategory } from '../types/domain';
 
 const CATEGORY_ORDER: McpCategory[] = [
   'project_planning',
@@ -27,8 +27,8 @@ const CATEGORY_ORDER: McpCategory[] = [
 ];
 
 export function McpConnectionsPage() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<McpConnector | null>(null);
 
   const filteredSource = useMemo(() => {
     if (!search) return sourceConnectors;
@@ -55,7 +55,7 @@ export function McpConnectionsPage() {
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {platformMcpServices.map((c) => (
           <Grid key={c.id} size={{ xs: 12, md: 6 }}>
-            <ConnectorCard connector={c} onConfigure={setSelected} />
+            <ConnectorCard connector={c} onConfigure={(c) => navigate(`/mcp/${c.id}`)} />
           </Grid>
         ))}
       </Grid>
@@ -87,7 +87,7 @@ export function McpConnectionsPage() {
             <Grid container spacing={2}>
               {items.map((c) => (
                 <Grid key={c.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-                  <ConnectorCard connector={c} onConfigure={setSelected} />
+                  <ConnectorCard connector={c} onConfigure={(c) => navigate(`/mcp/${c.id}`)} />
                 </Grid>
               ))}
             </Grid>
@@ -100,8 +100,6 @@ export function McpConnectionsPage() {
           No connectors match "{search}".
         </Typography>
       )}
-
-      <ConnectorDetailsDrawer connector={selected} open={Boolean(selected)} onClose={() => setSelected(null)} />
     </Box>
   );
 }
