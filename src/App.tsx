@@ -16,6 +16,7 @@ import { WorkflowsPage } from './pages/WorkflowsPage';
 import { WorkflowDetailsPage } from './pages/WorkflowDetailsPage';
 import { WorkflowStepDetailsPage } from './pages/WorkflowStepDetailsPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
+import { ApprovalDetailsPage } from './pages/ApprovalDetailsPage';
 import { SecurityCompliancePage } from './pages/SecurityCompliancePage';
 import { ActivityAuditPage } from './pages/ActivityAuditPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -40,6 +41,7 @@ function App() {
         <Route path="/workflows/:workflowId" element={<WorkflowDetailsPage />} />
         <Route path="/workflows/:workflowId/steps/:stepId" element={<WorkflowStepDetailsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
+        <Route path="/approvals/:approvalId" element={<ApprovalDetailsPage />} />
         <Route path="/security" element={<SecurityCompliancePage />} />
         <Route path="/audit" element={<ActivityAuditPage />} />
         <Route path="/settings" element={<SettingsPage />} />
