@@ -10,29 +10,20 @@ import Grid from '@mui/material/Grid';
 import Divider from '@mui/material/Divider';
 import Alert from '@mui/material/Alert';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { AgentCard } from '../components/agents/AgentCard';
-import { AgentDetailsDrawer } from '../components/agents/AgentDetailsDrawer';
 import { sdlcPhases } from '../data/phases';
 import { agents as seedAgents } from '../data/agents';
-import { useAppState } from '../context/AppStateContext';
-import type { Agent } from '../types/domain';
 
 const HEALTH_MAP: Record<string, string> = { on_track: 'on_track', needs_attention: 'needs_attention', blocked: 'blocked' };
 
 export function SdlcPhasesPage() {
-  const { role, projectId, environment } = useAppState();
-  const [agents, setAgents] = useState(seedAgents);
-  const [selected, setSelected] = useState<Agent | null>(null);
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState<string | false>(sdlcPhases[0].id);
 
-  const crossCuttingAgents = agents.filter((a) => a.category === 'cross_cutting');
-
-  function handleAgentChanged(updated: Agent) {
-    setAgents((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
-    setSelected(updated);
-  }
+  const crossCuttingAgents = seedAgents.filter((a) => a.category === 'cross_cutting');
 
   return (
     <Box>
@@ -66,11 +57,11 @@ export function SdlcPhasesPage() {
             </Typography>
             <Grid container spacing={2} sx={{ mb: 2 }}>
               {phase.agentIds.map((id) => {
-                const agent = agents.find((a) => a.id === id);
+                const agent = seedAgents.find((a) => a.id === id);
                 if (!agent) return null;
                 return (
                   <Grid key={id} size={{ xs: 12, sm: 6, lg: 3 }}>
-                    <AgentCard agent={agent} onViewDetails={setSelected} dense />
+                    <AgentCard agent={agent} onViewDetails={(a) => navigate(`/agents/${a.id}`)} dense />
                   </Grid>
                 );
               })}
@@ -99,20 +90,11 @@ export function SdlcPhasesPage() {
         <Grid container spacing={2}>
           {crossCuttingAgents.map((agent) => (
             <Grid key={agent.id} size={{ xs: 12, sm: 6, lg: 3 }}>
-              <AgentCard agent={agent} onViewDetails={setSelected} dense />
+              <AgentCard agent={agent} onViewDetails={(a) => navigate(`/agents/${a.id}`)} dense />
             </Grid>
           ))}
         </Grid>
       </Box>
-
-      <AgentDetailsDrawer
-        agent={selected}
-        open={Boolean(selected)}
-        onClose={() => setSelected(null)}
-        onChanged={handleAgentChanged}
-        canRunAgents={role.canRunAgents}
-        context={{ projectId, environment }}
-      />
     </Box>
   );
 }
