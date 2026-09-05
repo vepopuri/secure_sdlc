@@ -23,7 +23,7 @@ export function EvidenceChips({ refs }: { refs: string[] }) {
             icon={<LaunchIcon fontSize="small" />}
             label={ref}
             clickable
-            onClick={() => navigate(`/knowledge-graph?entity=${entity.id}`)}
+            onClick={() => navigate(`/knowledge-graph/${entity.id}`)}
             sx={{ fontFamily: 'monospace' }}
           />
         ) : (
