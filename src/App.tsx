@@ -14,6 +14,7 @@ import { KgEntityDetailsPage } from './pages/KgEntityDetailsPage';
 import { PlatformComponentsPage } from './pages/PlatformComponentsPage';
 import { WorkflowsPage } from './pages/WorkflowsPage';
 import { WorkflowDetailsPage } from './pages/WorkflowDetailsPage';
+import { WorkflowStepDetailsPage } from './pages/WorkflowStepDetailsPage';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { SecurityCompliancePage } from './pages/SecurityCompliancePage';
 import { ActivityAuditPage } from './pages/ActivityAuditPage';
@@ -37,6 +38,7 @@ function App() {
         <Route path="/components" element={<PlatformComponentsPage />} />
         <Route path="/workflows" element={<WorkflowsPage />} />
         <Route path="/workflows/:workflowId" element={<WorkflowDetailsPage />} />
+        <Route path="/workflows/:workflowId/steps/:stepId" element={<WorkflowStepDetailsPage />} />
         <Route path="/approvals" element={<ApprovalsPage />} />
         <Route path="/security" element={<SecurityCompliancePage />} />
         <Route path="/audit" element={<ActivityAuditPage />} />
