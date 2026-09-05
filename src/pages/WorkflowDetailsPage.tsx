@@ -15,11 +15,6 @@ import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineOppositeContent from '@mui/lab/TimelineOppositeContent';
 import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
-import ShareOutlinedIcon from '@mui/icons-material/ShareOutlined';
-import PolicyOutlinedIcon from '@mui/icons-material/PolicyOutlined';
-import GavelOutlinedIcon from '@mui/icons-material/GavelOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
@@ -29,41 +24,13 @@ import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
 import { EvidenceChips } from '../components/common/EvidenceChips';
 import { FlowPipeline } from '../components/common/FlowPipeline';
+import { STEP_KIND_ICONS, STEP_DOT_COLOR, StepStatusChip } from '../components/workflows/stepDisplay';
 import { workflowService } from '../services';
 import { agents } from '../data/agents';
 import { mcpConnectors } from '../data/mcpConnectors';
 import { useAppState } from '../context/AppStateContext';
 import { useStepRunner } from '../hooks/useStepRunner';
-import type { RunStatus, Workflow, WorkflowStepEvent } from '../types/domain';
-
-const ICONS: Record<WorkflowStepEvent['kind'], typeof SmartToyOutlinedIcon> = {
-  agent_handoff: SmartToyOutlinedIcon,
-  mcp_call: HubOutlinedIcon,
-  kg_read: ShareOutlinedIcon,
-  kg_write: ShareOutlinedIcon,
-  policy_decision: PolicyOutlinedIcon,
-  human_approval: GavelOutlinedIcon,
-  output: CheckCircleOutlineIcon,
-  error: ErrorOutlineIcon,
-};
-
-const DOT_COLOR: Record<string, 'success' | 'info' | 'error' | 'warning' | 'grey'> = {
-  completed: 'success',
-  running: 'info',
-  failed: 'error',
-  awaiting_approval: 'warning',
-  blocked: 'error',
-};
-
-/** For a human_approval step, "Completed" is ambiguous — say plainly whether it was approved or is still pending. */
-function StepStatusChip({ step, status }: { step: WorkflowStepEvent; status?: RunStatus }) {
-  if (!status) return <Chip size="small" variant="outlined" label="Pending" />;
-  if (step.kind === 'human_approval') {
-    if (status === 'completed') return <Chip size="small" color="success" label="Approved" />;
-    if (status === 'awaiting_approval') return <Chip size="small" color="warning" label="Pending approval" />;
-  }
-  return <StatusBadge status={status} />;
-}
+import type { RunStatus, Workflow } from '../types/domain';
 
 export function WorkflowDetailsPage() {
   const { workflowId } = useParams();
@@ -241,7 +208,7 @@ export function WorkflowDetailsPage() {
       <Paper sx={{ p: { xs: 1, md: 2 } }}>
         <Timeline sx={{ p: 0, m: 0 }}>
           {workflow.steps.map((step, i) => {
-            const Icon = ICONS[step.kind];
+            const Icon = STEP_KIND_ICONS[step.kind];
             const status = displayStatus(i, step.status);
             return (
               <TimelineItem key={step.id}>
@@ -249,7 +216,7 @@ export function WorkflowDetailsPage() {
                   {status ? new Date(step.timestamp).toLocaleTimeString() : '—'}
                 </TimelineOppositeContent>
                 <TimelineSeparator>
-                  <TimelineDot color={status ? (DOT_COLOR[status] ?? 'grey') : 'grey'} variant={status === 'running' ? 'filled' : 'outlined'}>
+                  <TimelineDot color={status ? (STEP_DOT_COLOR[status] ?? 'grey') : 'grey'} variant={status === 'running' ? 'filled' : 'outlined'}>
                     {status ? <Icon fontSize="small" /> : <RadioButtonUncheckedIcon fontSize="small" />}
                   </TimelineDot>
                   {i < workflow.steps.length - 1 && <TimelineConnector />}
@@ -284,6 +251,9 @@ export function WorkflowDetailsPage() {
                       )}
                     </Stack>
                   )}
+                  <Button size="small" sx={{ mt: 0.5 }} onClick={() => navigate(`/workflows/${workflow.id}/steps/${step.id}`)}>
+                    View details
+                  </Button>
                 </TimelineContent>
               </TimelineItem>
             );
