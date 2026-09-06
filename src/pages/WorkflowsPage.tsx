@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
+import { LiveDot } from '../components/common/LiveDot';
 import { workflowService } from '../services';
 import { agents } from '../data/agents';
 import type { Workflow, WorkflowStatus } from '../types/domain';
@@ -68,7 +69,11 @@ export function WorkflowsPage() {
 
   return (
     <Box>
-      <PageHeader title="Workflows" description="End-to-end runs where agents hand off work to each other, call MCP tools, and update the Knowledge Graph." />
+      <PageHeader
+        title="Workflows"
+        description="End-to-end runs where agents hand off work to each other, call MCP tools, and update the Knowledge Graph."
+        actions={!loading && (counts.active ?? 0) > 0 ? <LiveDot label={`${counts.active} active`} /> : undefined}
+      />
 
       <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mb: 2 }}>
         {FILTERS.map((f) => (
@@ -111,7 +116,10 @@ export function WorkflowsPage() {
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge status={w.status} />
+                      <Stack direction="row" alignItems="center" gap={0.75}>
+                        {w.status === 'active' && <LiveDot label={null} />}
+                        <StatusBadge status={w.status} />
+                      </Stack>
                     </TableCell>
                     <TableCell>{w.triggerSource}</TableCell>
                     <TableCell>{w.initiatingUser}</TableCell>
