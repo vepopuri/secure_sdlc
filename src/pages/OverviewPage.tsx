@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
@@ -28,6 +28,7 @@ import { PhaseCard } from '../components/phases/PhaseCard';
 import { DemoDataChip } from '../components/common/DemoDataChip';
 import { ConnectorMotif } from '../components/common/ConnectorMotif';
 import { Reveal } from '../components/common/Reveal';
+import { LiveDot } from '../components/common/LiveDot';
 import { GovernanceJourneyDiagram } from '../components/common/GovernanceJourneyDiagram';
 import { sdlcPhases } from '../data/phases';
 import { agents, CORE_AGENT_COUNT, CROSS_CUTTING_AGENT_COUNT, TOTAL_AGENT_COUNT } from '../data/agents';
@@ -44,6 +45,14 @@ const CROSS_CUTTING_GROUPS = [
   { label: 'Privacy', icon: PolicyIcon, match: (name: string) => /privacy/i.test(name) },
   { label: 'Supply chain', icon: InventoryIcon, match: (name: string) => /supply chain|third-party/i.test(name) },
   { label: 'Resilience', icon: HealthAndSafetyIcon, match: (name: string) => /resilience|incident/i.test(name) },
+];
+
+// Cycled (not random) so the simulated feed stays predictable across renders and screenshots.
+const ACTIVITY_TICKER = [
+  { icon: <FactCheckIcon fontSize="small" />, type: 'Agent execution', text: (agent: string) => `${agent}: Completed a policy check` },
+  { icon: <PlayCircleIcon fontSize="small" />, type: 'Pipeline event', text: (agent: string) => `${agent}: Advanced to the next pipeline stage` },
+  { icon: <ShareIcon fontSize="small" />, type: 'Cross-phase insight', text: (agent: string) => `${agent}: Traversed the Knowledge Graph for a new insight` },
+  { icon: <ShieldIcon fontSize="small" />, type: 'Security scan', text: (agent: string) => `${agent}: Ran a scheduled security scan` },
 ];
 
 /** A big-number "spec strip" row: a clickable stat with a thin divider between items, no card chrome. */
@@ -105,7 +114,26 @@ export function OverviewPage() {
         type: 'Security finding',
       })),
     ];
-    return items.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 8);
+    return items.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 8).map((item, i) => ({ ...item, id: `seed-${i}` }));
+  }, []);
+
+  const [liveActivity, setLiveActivity] = useState(recentActivity);
+  const tickRef = useRef(0);
+
+  // Simulates the workspace "streaming" — no backend to poll, so a new demo event is
+  // synthesized on a fixed cadence and slides into the feed. Purely cosmetic; doesn't touch
+  // the underlying mock data or any service.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const template = ACTIVITY_TICKER[tickRef.current % ACTIVITY_TICKER.length];
+      const agent = agents[tickRef.current % agents.length];
+      tickRef.current += 1;
+      setLiveActivity((prev) => [
+        { id: `live-${Date.now()}`, ts: new Date().toISOString(), icon: template.icon, type: template.type, text: template.text(agent.name) },
+        ...prev,
+      ].slice(0, 8));
+    }, 4500);
+    return () => clearInterval(interval);
   }, []);
 
   const summaryStats = [
@@ -321,12 +349,13 @@ export function OverviewPage() {
             </Grid>
             <Grid size={{ xs: 12, lg: 5 }}>
               <Paper sx={{ p: 2.5, height: '100%' }}>
-                <Typography variant="h3" sx={{ mb: 1.5 }}>
-                  Recent activity
-                </Typography>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
+                  <Typography variant="h3">Recent activity</Typography>
+                  <LiveDot />
+                </Stack>
                 <List dense disablePadding>
-                  {recentActivity.map((item, i) => (
-                    <Box key={i}>
+                  {liveActivity.map((item, i) => (
+                    <Box key={item.id} className="activity-enter">
                       <ListItem disableGutters>
                         <ListItemAvatar sx={{ minWidth: 40 }}>
                           <Avatar sx={{ width: 28, height: 28, bgcolor: 'grey.200', color: 'text.primary' }}>{item.icon}</Avatar>
@@ -338,10 +367,19 @@ export function OverviewPage() {
                           secondaryTypographyProps={{ variant: 'caption' }}
                         />
                       </ListItem>
-                      {i < recentActivity.length - 1 && <Divider component="li" />}
+                      {i < liveActivity.length - 1 && <Divider component="li" />}
                     </Box>
                   ))}
                 </List>
+                <style>{`
+                  @media (prefers-reduced-motion: no-preference) {
+                    .activity-enter { animation: activity-enter 420ms ease-out; }
+                  }
+                  @keyframes activity-enter {
+                    from { opacity: 0; transform: translateY(-6px); }
+                    to { opacity: 1; transform: translateY(0); }
+                  }
+                `}</style>
               </Paper>
             </Grid>
           </Grid>
