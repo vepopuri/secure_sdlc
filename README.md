@@ -3,8 +3,8 @@
 Octopus is an AI-powered software delivery control plane — one governing intelligence coordinating many specialized
 agents across planning, design, development, testing, security, deployment, operations, compliance, and feedback.
 This repository contains the **frontend application shell** for the platform: a React + TypeScript + Material UI app
-with a full, typed mock data layer and a mock service layer designed so a real backend can be dropped in later
-without a UI redesign.
+backed by a real Postgres database (Vercel Postgres / Neon) behind a set of Vercel serverless functions under `api/`
+— see [Database](#database) below.
 
 This is a **demo build**. All data — agents, MCP connectors, workflows, approvals, security findings, audit
 events — is realistic mock data, clearly labeled throughout the UI with a "Demo data" chip. The one exception is the
@@ -28,12 +28,14 @@ Remediation Agent's live GitHub integration — see [Live integration: Remediati
 
 ```bash
 npm install
-npm run dev       # start the Vite dev server (http://localhost:5173)
+npm run dev       # start the Vite dev server (http://localhost:5173) — UI only, api/*.ts routes need `vercel dev`
 npm run build     # type-check (tsc -b) and produce a production build in dist/
 npm run preview   # serve the production build locally
 ```
 
-No environment variables or backend are required — everything runs against the in-memory mock service layer.
+**A `DATABASE_URL` is required** for anything that reads or writes data — see [Database](#database) below and
+`.env.example`. Running just `npm run dev` serves the UI, but every page's data fetch will fail until the database
+is provisioned, migrated, seeded, and `vercel dev` (not plain `vite`) is used to also serve the `api/*.ts` functions.
 
 ## Project structure
 
@@ -41,7 +43,7 @@ No environment variables or backend are required — everything runs against the
 src/
   types/domain.ts        Shared TypeScript types — the contract every mock (and future real) API honors
   data/                   Static, typed seed data (agents, phases, MCP connectors, KG entities, workflows, …)
-  services/               Mock service layer — async functions that stand in for a real backend API
+  services/               fetch()-backed service layer calling api/*.ts, backed by a real Postgres database
   context/                React context for the demo role switcher, environment, workspace, and project selection
   theme/                  MUI theme (Deloitte-inspired palette) and design tokens
   components/
@@ -51,9 +53,13 @@ src/
   pages/                  One file per left-nav tab (Overview, Agents, Knowledge Graph, Settings, …)
 ```
 
-## Where mock data is defined
+## Where seed data is defined
 
-All seed data lives in `src/data/`, fully typed against `src/types/domain.ts`:
+All seed data lives in `src/data/`, fully typed against `src/types/domain.ts`. Most of it is now **seed-only** — read
+once by `scripts/seed.ts` to populate the database and no longer imported by any runtime page or service (`agents`,
+`mcpConnectors`, `knowledgeGraph`, `workflows`, `approvals`, `audit`, `orgs`, `roles`). `phases.ts`, `security.ts`,
+`platformComponents.ts`, and `insights.ts` are the exception: nothing in the app ever mutates this content, so it's
+still imported directly and stays plain bundled TypeScript, not a database table.
 
 | File | Contents |
 |---|---|
@@ -72,18 +78,39 @@ All seed data lives in `src/data/`, fully typed against `src/types/domain.ts`:
 Timestamps and scores are generated deterministically (`mockHelpers.ts`) from a fixed "demo now" so the app looks
 the same on every reload instead of reshuffling.
 
-## How to replace mock services with real APIs
+## Database
+
+Every mutable domain (agents, MCP connectors, Knowledge Graph entities/relationships, workflows/steps, approvals,
+settings/roles, teams/projects, audit events) lives in Postgres — Vercel Postgres, which runs on Neon — behind a set
+of Vercel serverless functions under `api/*.ts`. Schema lives in `db/schema.ts` as [Drizzle ORM](https://orm.drizzle.team)
+table definitions, mirroring `src/types/domain.ts` field-for-field.
+
+**One-time setup:**
+```bash
+# 1. Provision Vercel Postgres (dashboard: Storage tab -> Create Database -> Postgres, or CLI):
+vercel postgres create
+vercel env pull                # writes DATABASE_URL into .env.local
+
+# 2. Apply the schema:
+npx drizzle-kit push           # or: drizzle-kit generate && drizzle-kit migrate for reviewable SQL migrations
+
+# 3. Seed it from src/data/**:
+npx tsx scripts/seed.ts
+```
 
 Every page talks to data exclusively through `src/services/*Service.ts` (`agentService`, `mcpService`,
-`knowledgeGraphService`, `workflowService`, `approvalService`, `auditService`, `settingsService`), re-exported from
-`src/services/index.ts`. Each function already returns a `Promise` of a typed domain object, matching what a real
-`fetch()`-backed implementation would return. To connect a real backend:
+`knowledgeGraphService`, `workflowService`, `approvalService`, `auditService`, `settingsService`, `orgService`),
+re-exported from `src/services/index.ts` — each is a thin `fetch('/api/...')` wrapper (see `src/services/apiClient.ts`)
+with the exact same exported function signatures a mock version would have had, so no page needed to change shape
+when this cutover happened. Audit rows are written **server-side**, inside the mutating `api/*.ts` endpoint that
+needs one (see `api/_lib/audit.ts`) — in the same request as the mutation itself, so a client can't mutate state
+without the audit trail being written.
 
-1. Keep the exported function names and signatures in each `*Service.ts` file unchanged.
-2. Replace the body (which currently reads/mutates an in-memory array copied from `src/data/`) with an HTTP call.
-3. No page or component needs to change — they only import from `src/services`, never from `src/data` for anything
-   that should eventually be live (a few read-only reference lookups, like looking up a phase name by id, still
-   import directly from `src/data` since that's static reference/display data, not stateful).
+A few pages/components still read directly from `src/data/*` — see [Where seed data is defined](#where-seed-data-is-defined)
+above for which files that's still correct for (static, never-mutated catalog content). Everything else that needs
+live data goes through either its own service call or `src/context/DataCacheContext.tsx`, a shared one-time fetch of
+the mutable collections for the many small cross-reference lookups scattered across detail pages (e.g. resolving an
+approval's `projectId` into a project name).
 
 ## How new agents are added
 
@@ -133,9 +160,10 @@ under different role lenses without a real login system.
 
 ## Live integrations
 
-Everywhere else in this app, "Run agent" is simulated. Two agents are the deliberate exceptions, each with a
-separate, clearly-labeled button in its details drawer that calls a real Vercel serverless function instead of the
-mock service layer.
+Everywhere else in this app, "Run agent" writes a synthetic execution record to the database — a real row, but a
+simulated result. Two agents are the deliberate exceptions, each with a separate, clearly-labeled button in its
+details drawer that calls a real Vercel serverless function that reaches an actual external system, not just this
+app's own database.
 
 ### Remediation Agent — real GitHub write
 
@@ -193,15 +221,10 @@ outside the two live integrations described above:
 - A real Agent Orchestrator / Agent Runtime that actually executes agent logic — "Run agent" appends a synthetic
   execution record rather than invoking a model, for every agent except the two live actions above (and the
   Remediation Agent's patch generation, specifically, only when `ANTHROPIC_API_KEY` is set — see above).
-- A real Knowledge Graph database, policy engine, or audit log — these are typed, seeded, in-memory arrays
-  (though see below — they do persist to `localStorage` within a browser).
-- Authentication/SSO — the role switcher is a demo convenience, not a login system.
+- A real policy engine that evaluates and enforces action levels beyond the UI's own checks — `policyResult` and
+  `approvalLevel` are stored fields, not the output of a live rules engine.
+- Authentication/SSO — the role switcher is a demo convenience, not a login system. Which role/environment/project
+  you're currently viewing as is a local browser preference (`src/services/persist.ts`), not a server-side session.
 
-## Persistence
-
-Every mock service's mutable store, plus the role/environment/project selectors, is mirrored to `localStorage`
-(`src/services/persist.ts`) on every mutation, so approvals decided, agents run, workflows started, Knowledge
-Graph edits, and settings changes all survive a page reload. On first load — or with `localStorage` cleared or
-unavailable — every store falls back to its deterministic seed data unchanged, so the demo still looks the same
-on a clean browser. This is per-browser, in-memory-replacement persistence for demo continuity, not a real
-database: clearing site data resets everything to the original seed.
+The Knowledge Graph and audit log described in [Database](#database) above **are** real now — a genuine schema
+change or database outage would actually be visible, unlike the rest of this list.

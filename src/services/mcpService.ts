@@ -1,8 +1,5 @@
 import type { ConnectionStatus, McpCategory, McpConnector } from '../types/domain';
-import { mcpConnectors as seedConnectors } from '../data/mcpConnectors';
-import { withLatency, simulateOutcome } from './simulate';
-
-let store: McpConnector[] = seedConnectors.map((c) => ({ ...c }));
+import { apiFetch, apiFetchOptional, toQueryString } from './apiClient';
 
 export interface McpFilters {
   search?: string;
@@ -10,36 +7,29 @@ export interface McpFilters {
   status?: ConnectionStatus;
 }
 
-function matches(c: McpConnector, filters: McpFilters): boolean {
-  if (filters.search) {
-    const q = filters.search.toLowerCase();
-    if (!`${c.name} ${c.description}`.toLowerCase().includes(q)) return false;
-  }
-  if (filters.category && c.category !== filters.category) return false;
-  if (filters.status && c.status !== filters.status) return false;
-  return true;
-}
-
 export const mcpService = {
   list(filters: McpFilters = {}): Promise<McpConnector[]> {
-    return withLatency(store.filter((c) => matches(c, filters)));
+    return apiFetch<McpConnector[]>(`/api/mcp-connectors${toQueryString(filters)}`);
   },
 
   getById(id: string): Promise<McpConnector | undefined> {
-    return withLatency(store.find((c) => c.id === id));
+    return apiFetchOptional<McpConnector>(`/api/mcp-connectors/${id}`);
   },
 
   /** Demo-mode connection test. Never calls a real system. */
-  testConnection(id: string): Promise<{ ok: boolean; message: string }> {
-    return simulateOutcome(
-      { ok: true, message: `Demo mode: connection check for ${id} succeeded (simulated).` },
-      0.15,
-      900,
-    ).catch((err: Error) => ({ ok: false, message: err.message }));
+  async testConnection(id: string): Promise<{ ok: boolean; message: string }> {
+    const res = await fetch(`/api/mcp-connectors/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'test' }),
+    });
+    return res.json();
   },
 
   setStatus(id: string, status: ConnectionStatus): Promise<McpConnector | undefined> {
-    store = store.map((c) => (c.id === id ? { ...c, status } : c));
-    return withLatency(store.find((c) => c.id === id));
+    return apiFetchOptional<McpConnector>(`/api/mcp-connectors/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
   },
 };

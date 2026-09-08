@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Paper from '@mui/material/Paper';
@@ -8,13 +8,15 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
+import LinearProgress from '@mui/material/LinearProgress';
 import HubIcon from '@mui/icons-material/Hub';
 import SearchIcon from '@mui/icons-material/Search';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { ConnectorCard } from '../components/mcp/ConnectorCard';
-import { sourceConnectors, platformMcpServices, MCP_CATEGORY_LABELS } from '../data/mcpConnectors';
-import type { McpCategory } from '../types/domain';
+import { MCP_CATEGORY_LABELS } from '../data/mcpConnectors';
+import { mcpService } from '../services';
+import type { McpCategory, McpConnector } from '../types/domain';
 
 const CATEGORY_ORDER: McpCategory[] = [
   'project_planning',
@@ -29,12 +31,30 @@ const CATEGORY_ORDER: McpCategory[] = [
 export function McpConnectionsPage() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [connectors, setConnectors] = useState<McpConnector[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    mcpService.list().then((result) => {
+      if (!cancelled) {
+        setConnectors(result);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const sourceConnectors = useMemo(() => connectors.filter((c) => !c.isPlatformService), [connectors]);
+  const platformMcpServices = useMemo(() => connectors.filter((c) => c.isPlatformService), [connectors]);
 
   const filteredSource = useMemo(() => {
     if (!search) return sourceConnectors;
     const q = search.toLowerCase();
     return sourceConnectors.filter((c) => `${c.name} ${c.description} ${c.connectedSystems.join(' ')}`.toLowerCase().includes(q));
-  }, [search]);
+  }, [search, sourceConnectors]);
 
   return (
     <Box>
@@ -48,6 +68,8 @@ export function McpConnectionsPage() {
         here is routed through the <strong>MCP Gateway and Registry</strong>, and all Knowledge Graph access goes
         through the <strong>Knowledge Graph MCP Server</strong>.
       </Alert>
+
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
 
       <Typography variant="h2" sx={{ mb: 2 }}>
         Platform MCP services

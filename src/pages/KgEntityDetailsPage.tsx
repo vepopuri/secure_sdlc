@@ -23,7 +23,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
 import { KG_DOMAINS } from '../data/knowledgeGraph';
-import { projects } from '../data/orgs';
+import { useDataCache } from '../context/DataCacheContext';
 import { knowledgeGraphService } from '../services';
 import type { KgEntity } from '../types/domain';
 
@@ -65,6 +65,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 export function KgEntityDetailsPage() {
   const { entityId } = useParams();
   const navigate = useNavigate();
+  const { projects } = useDataCache();
 
   const [allEntities, setAllEntities] = useState<KgEntity[]>([]);
   const [loading, setLoading] = useState(true);

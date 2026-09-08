@@ -25,8 +25,8 @@ import { AgentCard } from '../components/agents/AgentCard';
 import { agentService, type AgentFilters } from '../services';
 import { sdlcPhases } from '../data/phases';
 import { mcpConnectors } from '../data/mcpConnectors';
-import { workflows } from '../data/workflows';
 import { useAppState } from '../context/AppStateContext';
+import { useDataCache } from '../context/DataCacheContext';
 import type { Agent } from '../types/domain';
 
 type TriState = 'any' | 'yes' | 'no';
@@ -34,6 +34,7 @@ type TriState = 'any' | 'yes' | 'no';
 export function AgentsPage() {
   const navigate = useNavigate();
   const { role, projectId, environment } = useAppState();
+  const { workflows } = useDataCache();
   const [search, setSearch] = useState('');
   const [phaseId, setPhaseId] = useState<string>('all');
   const [category, setCategory] = useState<string>('all');
@@ -57,7 +58,7 @@ export function AgentsPage() {
       }
     }
     return ids;
-  }, []);
+  }, [workflows]);
 
   const filters: AgentFilters = useMemo(
     () => ({

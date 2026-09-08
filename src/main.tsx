@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { BrowserRouter } from 'react-router-dom';
 import { theme } from './theme/theme';
 import { AppStateProvider } from './context/AppStateContext';
+import { DataCacheProvider } from './context/DataCacheContext';
 import App from './App.tsx';
 
 createRoot(document.getElementById('root')!).render(
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
       <CssBaseline />
       <BrowserRouter>
         <AppStateProvider>
-          <App />
+          <DataCacheProvider>
+            <App />
+          </DataCacheProvider>
         </AppStateProvider>
       </BrowserRouter>
     </ThemeProvider>

@@ -20,8 +20,8 @@ import { EmptyState } from '../components/common/EmptyState';
 import { ActionLevelBadge, RiskBadge, StatusBadge } from '../components/common/StatusBadge';
 import { approvalService } from '../services';
 import { agents } from '../data/agents';
-import { projects } from '../data/orgs';
 import { useAppState } from '../context/AppStateContext';
+import { useDataCache } from '../context/DataCacheContext';
 import type { ApprovalItem } from '../types/domain';
 
 const LEVEL_LEGEND = [
@@ -34,6 +34,7 @@ const LEVEL_LEGEND = [
 export function ApprovalsPage() {
   const navigate = useNavigate();
   const { role } = useAppState();
+  const { projects } = useDataCache();
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<ApprovalItem['status'] | 'all'>('pending');

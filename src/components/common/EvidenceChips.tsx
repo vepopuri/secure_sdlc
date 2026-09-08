@@ -2,7 +2,7 @@ import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 import LaunchIcon from '@mui/icons-material/Launch';
 import { useNavigate } from 'react-router-dom';
-import { kgEntities } from '../../data/knowledgeGraph';
+import { useDataCache } from '../../context/DataCacheContext';
 
 /**
  * Renders stored evidence/artifact references. Where an artifact is actually indexed by a
@@ -11,6 +11,7 @@ import { kgEntities } from '../../data/knowledgeGraph';
  */
 export function EvidenceChips({ refs }: { refs: string[] }) {
   const navigate = useNavigate();
+  const { kgEntities } = useDataCache();
   if (refs.length === 0) return null;
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap">

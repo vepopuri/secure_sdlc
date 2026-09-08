@@ -30,14 +30,14 @@ import { ConnectorMotif } from '../components/common/ConnectorMotif';
 import { Reveal } from '../components/common/Reveal';
 import { LiveDot } from '../components/common/LiveDot';
 import { GovernanceJourneyDiagram } from '../components/common/GovernanceJourneyDiagram';
+import { useDataCache } from '../context/DataCacheContext';
 import { sdlcPhases } from '../data/phases';
+// Catalog-only data (names, categories, counts): never mutated by any
+// service, so these stay static rather than going through DataCacheContext.
 import { agents, CORE_AGENT_COUNT, CROSS_CUTTING_AGENT_COUNT, TOTAL_AGENT_COUNT } from '../data/agents';
 import { sourceConnectors, platformMcpServices } from '../data/mcpConnectors';
-import { approvals } from '../data/approvals';
 import { securityFindings } from '../data/security';
 import { crossPhaseInsights } from '../data/insights';
-import { auditEvents } from '../data/audit';
-import { workflows } from '../data/workflows';
 
 const CROSS_CUTTING_GROUPS = [
   { label: 'Security', icon: ShieldIcon, match: (name: string) => /security|iam|secrets|adversarial|detection|cloud/i.test(name) },
@@ -82,8 +82,9 @@ function StatItem({ value, label, sub, onClick }: { value: number | string; labe
 
 export function OverviewPage() {
   const navigate = useNavigate();
+  const { mcpConnectors, approvals, auditEvents, workflows } = useDataCache();
   const crossCuttingAgents = agents.filter((a) => a.category === 'cross_cutting');
-  const connectedSystemsCount = sourceConnectors.filter((c) => c.status === 'connected').length;
+  const connectedSystemsCount = mcpConnectors.filter((c) => !c.isPlatformService && c.status === 'connected').length;
   const pendingApprovalsCount = approvals.filter((a) => a.status === 'pending').length;
   const openFindingsCount = securityFindings.filter((f) => f.status === 'open').length;
 
@@ -115,10 +116,18 @@ export function OverviewPage() {
       })),
     ];
     return items.sort((a, b) => (a.ts < b.ts ? 1 : -1)).slice(0, 8).map((item, i) => ({ ...item, id: `seed-${i}` }));
-  }, []);
+  }, [auditEvents, workflows, approvals]);
 
   const [liveActivity, setLiveActivity] = useState(recentActivity);
   const tickRef = useRef(0);
+
+  // recentActivity starts empty (DataCache hasn't loaded yet) and is only
+  // used as useState's initial value above, so once the real data arrives
+  // this syncs it in — recentActivity's deps are fetched once, not
+  // re-polled, so this doesn't fight with the live ticker below.
+  useEffect(() => {
+    if (recentActivity.length > 0) setLiveActivity(recentActivity);
+  }, [recentActivity]);
 
   // Simulates the workspace "streaming" — no backend to poll, so a new demo event is
   // synthesized on a fixed cadence and slides into the feed. Purely cosmetic; doesn't touch

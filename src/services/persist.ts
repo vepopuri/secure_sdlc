@@ -1,8 +1,10 @@
-// Tiny localStorage helper used by every mock service's mutable store so
-// demo state (approvals decided, agents run, workflows started, KG edits,
-// settings changes, role/environment/project selection, …) survives a page
-// reload. Namespaced and versioned so a future shape change can force a
-// reseed by bumping the version rather than guessing at migrations.
+// Tiny localStorage helper. Every domain store (approvals, agents, workflows,
+// KG entities, settings, ...) now lives in the real Postgres database behind
+// api/*.ts — see each service's own file for its fetch() calls. The only
+// thing still using this helper is AppStateContext's role/environment/
+// project SELECTION (which demo role/env/project you're currently viewing
+// as) — a local UI preference with no server-side meaning, so it stays a
+// plain browser-local value rather than a database row.
 //
 // Deliberately fails soft: if localStorage is unavailable (private
 // browsing, storage quota, SSR) every function below just falls back to
@@ -25,9 +27,4 @@ export function savePersisted<T>(key: string, value: T): void {
   } catch {
     // Storage unavailable or full — the demo continues in-memory only.
   }
-}
-
-/** Initializes a store from localStorage if present, else from the given seed. */
-export function initStore<T>(key: string, seed: T): T {
-  return loadPersisted<T>(key) ?? seed;
 }

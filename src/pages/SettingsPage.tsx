@@ -33,8 +33,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge, ActionLevelBadge } from '../components/common/StatusBadge';
-import { settingsService, orgService, type PlatformSettings, agentService } from '../services';
-import { mcpConnectors as seedConnectors } from '../data/mcpConnectors';
+import { settingsService, orgService, type PlatformSettings, agentService, mcpService } from '../services';
 import { useAppState } from '../context/AppStateContext';
 import type { Agent, ActionLevel, Environment, McpConnector, Project, Role, Team } from '../types/domain';
 
@@ -79,7 +78,7 @@ export function SettingsPage() {
   const readOnly = !role.canConfigureIntegrations;
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [agentList, setAgentList] = useState<Agent[]>([]);
-  const [connectorList] = useState<McpConnector[]>(seedConnectors);
+  const [connectorList, setConnectorList] = useState<McpConnector[]>([]);
   const [teamList, setTeamList] = useState<Team[]>([]);
   const [projectList, setProjectList] = useState<Project[]>([]);
   const [roleList, setRoleList] = useState<Role[]>([]);
@@ -94,6 +93,7 @@ export function SettingsPage() {
     orgService.listProjects().then(setProjectList);
     settingsService.listRoles().then(setRoleList);
     agentService.list().then(setAgentList);
+    mcpService.list().then(setConnectorList);
   }, []);
 
   function patch(update: Partial<PlatformSettings>) {

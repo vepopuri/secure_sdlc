@@ -1,46 +1,40 @@
 import type { Project, Team } from '../types/domain';
-import { teams as seedTeams, projects as seedProjects } from '../data/orgs';
-import { withLatency } from './simulate';
-import { initStore, savePersisted } from './persist';
-
-const TEAMS_STORE_KEY = 'teams';
-const PROJECTS_STORE_KEY = 'projects';
-
-let teamsStore: Team[] = initStore(TEAMS_STORE_KEY, seedTeams.map((t) => ({ ...t, projectIds: [...t.projectIds] })));
-let projectsStore: Project[] = initStore(PROJECTS_STORE_KEY, seedProjects.map((p) => ({ ...p, environment: [...p.environment] })));
+import { apiFetch, apiFetchOptional } from './apiClient';
 
 export const orgService = {
   listTeams(): Promise<Team[]> {
-    return withLatency(teamsStore, 150);
+    return apiFetch<Team[]>('/api/teams');
   },
 
   listProjects(): Promise<Project[]> {
-    return withLatency(projectsStore, 150);
+    return apiFetch<Project[]>('/api/projects');
   },
 
   createTeam(input: Omit<Team, 'id'>): Promise<Team> {
-    const team: Team = { ...input, id: `team_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
-    teamsStore = [...teamsStore, team];
-    savePersisted(TEAMS_STORE_KEY, teamsStore);
-    return withLatency(team, 250);
+    return apiFetch<Team>('/api/teams', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
 
   updateTeam(id: string, patch: Partial<Omit<Team, 'id'>>): Promise<Team | undefined> {
-    teamsStore = teamsStore.map((t) => (t.id === id ? { ...t, ...patch } : t));
-    savePersisted(TEAMS_STORE_KEY, teamsStore);
-    return withLatency(teamsStore.find((t) => t.id === id), 250);
+    return apiFetchOptional<Team>(`/api/teams/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
   },
 
   createProject(input: Omit<Project, 'id'>): Promise<Project> {
-    const project: Project = { ...input, id: `proj_${Date.now()}_${Math.random().toString(36).slice(2, 6)}` };
-    projectsStore = [...projectsStore, project];
-    savePersisted(PROJECTS_STORE_KEY, projectsStore);
-    return withLatency(project, 250);
+    return apiFetch<Project>('/api/projects', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
   },
 
   updateProject(id: string, patch: Partial<Omit<Project, 'id'>>): Promise<Project | undefined> {
-    projectsStore = projectsStore.map((p) => (p.id === id ? { ...p, ...patch } : p));
-    savePersisted(PROJECTS_STORE_KEY, projectsStore);
-    return withLatency(projectsStore.find((p) => p.id === id), 250);
+    return apiFetchOptional<Project>(`/api/projects/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
   },
 };

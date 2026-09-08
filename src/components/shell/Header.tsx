@@ -24,8 +24,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OctopusMark } from '../common/OctopusMark';
 import { useAppState } from '../../context/AppStateContext';
-import { workspace, projects } from '../../data/orgs';
-import { roles } from '../../data/roles';
+import { useDataCache } from '../../context/DataCacheContext';
+import { workspace } from '../../data/orgs';
 import type { Environment } from '../../types/domain';
 
 const ENV_LABELS: Record<Environment, string> = {
@@ -43,7 +43,8 @@ const ENV_COLOR: Record<Environment, string> = {
 };
 
 export function Header({ onMenuClick }: { onMenuClick: () => void }) {
-  const { role, roleId, setRoleId, environment, setEnvironment, projectId, setProjectId } = useAppState();
+  const { role, roleId, setRoleId, roles, environment, setEnvironment, projectId, setProjectId } = useAppState();
+  const { projects } = useDataCache();
   const navigate = useNavigate();
   const [profileAnchor, setProfileAnchor] = useState<null | HTMLElement>(null);
   const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);

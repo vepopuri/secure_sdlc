@@ -12,7 +12,7 @@ import InputLabel from '@mui/material/InputLabel';
 import Button from '@mui/material/Button';
 import type { KgEntity } from '../../types/domain';
 import { KG_DOMAINS } from '../../data/knowledgeGraph';
-import { projects } from '../../data/orgs';
+import { useDataCache } from '../../context/DataCacheContext';
 import { knowledgeGraphService } from '../../services';
 
 interface EntityFormState {
@@ -26,24 +26,27 @@ interface EntityFormState {
   provenance: string;
 }
 
-const BLANK_FORM: EntityFormState = {
-  name: '',
-  domain: KG_DOMAINS[0].id,
-  entityType: '',
-  summary: '',
-  sourceSystem: 'Manually entered (demo)',
-  owner: '',
-  projectId: projects[0].id,
-  provenance: 'Manually entered through the Knowledge Graph tab (demo mode).',
-};
+function blankForm(firstProjectId: string): EntityFormState {
+  return {
+    name: '',
+    domain: KG_DOMAINS[0].id,
+    entityType: '',
+    summary: '',
+    sourceSystem: 'Manually entered (demo)',
+    owner: '',
+    projectId: firstProjectId,
+    provenance: 'Manually entered through the Knowledge Graph tab (demo mode).',
+  };
+}
 
 export function NewEntityDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (entityId: string) => void }) {
-  const [form, setForm] = useState<EntityFormState>(BLANK_FORM);
+  const { projects } = useDataCache();
+  const [form, setForm] = useState<EntityFormState>(() => blankForm(projects[0]?.id ?? ''));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setForm(BLANK_FORM);
-  }, [open]);
+    if (open) setForm(blankForm(projects[0]?.id ?? ''));
+  }, [open, projects]);
 
   function updateField<K extends keyof EntityFormState>(key: K, value: EntityFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));

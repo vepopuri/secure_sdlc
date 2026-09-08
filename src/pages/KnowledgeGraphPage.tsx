@@ -29,7 +29,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { NewEntityDialog } from '../components/kg/NewEntityDialog';
 import { EntityGraphView } from '../components/kg/EntityGraphView';
 import { KG_DOMAINS } from '../data/knowledgeGraph';
-import { projects } from '../data/orgs';
+import { useDataCache } from '../context/DataCacheContext';
 import { knowledgeGraphService } from '../services';
 import type { KgDomain, KgEntity } from '../types/domain';
 
@@ -42,6 +42,7 @@ const TIME_RANGES = [
 
 export function KnowledgeGraphPage() {
   const navigate = useNavigate();
+  const { projects } = useDataCache();
   const [search, setSearch] = useState('');
   const [selectedDomains, setSelectedDomains] = useState<KgDomain[]>([]);
   const [projectId, setProjectId] = useState('all');

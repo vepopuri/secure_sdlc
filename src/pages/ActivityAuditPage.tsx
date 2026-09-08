@@ -25,13 +25,11 @@ import { PageHeader } from '../components/common/PageHeader';
 import { StatusBadge, RiskBadge } from '../components/common/StatusBadge';
 import { EmptyState } from '../components/common/EmptyState';
 import { auditService, type AuditFilters } from '../services';
-import { projects } from '../data/orgs';
-import { agents } from '../data/agents';
-import { mcpConnectors } from '../data/mcpConnectors';
-import { workflows } from '../data/workflows';
+import { useDataCache } from '../context/DataCacheContext';
 import type { AuditEvent, Environment, RiskLevel } from '../types/domain';
 
 export function ActivityAuditPage() {
+  const { projects, agents, mcpConnectors, workflows } = useDataCache();
   const [search, setSearch] = useState('');
   const [projectId, setProjectId] = useState('all');
   const [agentId, setAgentId] = useState('all');

@@ -18,8 +18,8 @@ import { ActionLevelBadge, RiskBadge, StatusBadge } from '../components/common/S
 import { EvidenceChips } from '../components/common/EvidenceChips';
 import { approvalService } from '../services';
 import { agents } from '../data/agents';
-import { projects } from '../data/orgs';
 import { useAppState } from '../context/AppStateContext';
+import { useDataCache } from '../context/DataCacheContext';
 import type { ApprovalItem } from '../types/domain';
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -37,6 +37,7 @@ export function ApprovalDetailsPage() {
   const { approvalId } = useParams();
   const navigate = useNavigate();
   const { role } = useAppState();
+  const { projects } = useDataCache();
   const [approval, setApproval] = useState<ApprovalItem | undefined>();
   const [loading, setLoading] = useState(true);
 
