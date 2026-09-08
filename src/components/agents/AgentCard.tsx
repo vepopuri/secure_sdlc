@@ -9,15 +9,18 @@ import Box from '@mui/material/Box';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import type { Agent } from '../../types/domain';
 import { RiskBadge, StatusBadge } from '../common/StatusBadge';
+import { LiveDot } from '../common/LiveDot';
 
 interface AgentCardProps {
   agent: Agent;
   onViewDetails: (agent: Agent) => void;
   onRun?: (agent: Agent) => void;
   dense?: boolean;
+  /** True when this agent has a step running in an active workflow right now. */
+  live?: boolean;
 }
 
-export function AgentCard({ agent, onViewDetails, onRun, dense }: AgentCardProps) {
+export function AgentCard({ agent, onViewDetails, onRun, dense, live }: AgentCardProps) {
   const impactsProduction = agent.canAffectProduction || agent.canModifyInfrastructure || agent.canChangeFeatureFlags;
   return (
     <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -26,7 +29,10 @@ export function AgentCard({ agent, onViewDetails, onRun, dense }: AgentCardProps
           <Typography variant="h4" component="h3">
             {agent.name}
           </Typography>
-          <StatusBadge status={agent.status} />
+          <Stack direction="row" alignItems="center" gap={0.75}>
+            {live && <LiveDot label={null} />}
+            <StatusBadge status={agent.status} />
+          </Stack>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 1.5 }}>
           {agent.shortDescription}

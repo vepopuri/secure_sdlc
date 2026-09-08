@@ -20,10 +20,12 @@ import SmartToyOutlinedIcon from '@mui/icons-material/SmartToyOutlined';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../components/common/PageHeader';
 import { EmptyState } from '../components/common/EmptyState';
+import { LiveDot } from '../components/common/LiveDot';
 import { AgentCard } from '../components/agents/AgentCard';
 import { agentService, type AgentFilters } from '../services';
 import { sdlcPhases } from '../data/phases';
 import { mcpConnectors } from '../data/mcpConnectors';
+import { workflows } from '../data/workflows';
 import { useAppState } from '../context/AppStateContext';
 import type { Agent } from '../types/domain';
 
@@ -44,6 +46,18 @@ export function AgentsPage() {
 
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Which agents have a step actively running right now, across any in-flight workflow —
+  // the same "live" signal the Workflows page pulses on its active rows.
+  const runningAgentIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const wf of workflows) {
+      for (const step of wf.steps) {
+        if (step.status === 'running' && step.agentId) ids.add(step.agentId);
+      }
+    }
+    return ids;
+  }, []);
 
   const filters: AgentFilters = useMemo(
     () => ({
@@ -103,7 +117,11 @@ export function AgentsPage() {
 
   return (
     <Box>
-      <PageHeader title="Agents" description="Discover, filter, and inspect all 36 agents that make up the platform." />
+      <PageHeader
+        title="Agents"
+        description="Discover, filter, and inspect all 36 agents that make up the platform."
+        actions={runningAgentIds.size > 0 ? <LiveDot label={`${runningAgentIds.size} running`} /> : undefined}
+      />
 
       <Paper sx={{ p: 2, mb: 2 }}>
         <TextField
@@ -222,7 +240,12 @@ export function AgentsPage() {
         <Grid container spacing={2}>
           {agents.map((agent) => (
             <Grid key={agent.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <AgentCard agent={agent} onViewDetails={(a) => navigate(`/agents/${a.id}`)} onRun={role.canRunAgents ? handleRun : undefined} />
+              <AgentCard
+                agent={agent}
+                onViewDetails={(a) => navigate(`/agents/${a.id}`)}
+                onRun={role.canRunAgents ? handleRun : undefined}
+                live={runningAgentIds.has(agent.id)}
+              />
             </Grid>
           ))}
         </Grid>
